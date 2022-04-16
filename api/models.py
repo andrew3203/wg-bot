@@ -148,7 +148,7 @@ class VpnServer(models.Model):
         return Peer.objects.filter(server=self).count()
 
     def get_traffic_list(self):
-        return ServerTraffic.objects.filter(serverv=self)
+        return ServerTraffic.objects.filter(server=self)
 
     def get_traffic(self):
         amount = 0

@@ -30,9 +30,10 @@ class ReferralAdmin(admin.ModelAdmin):
         'created_at',
     )
     search_fields = ('owner', 'code')
+    readonly_fields = ('get_uses_amount',)
 
     @admin.display(description='Uses amount')
-    def get_uses_amount(obj):
+    def get_uses_amount(self, obj):
         return f'{obj.get_uses_amount()}'
 
 
@@ -62,17 +63,22 @@ class VpnServerAdmin(admin.ModelAdmin):
     )
     list_filter = ("location", )
     search_fields = ('ip', 'user_id')
+    readonly_fields = (
+        'available_peers_amount',
+        'peers_amount',
+        'traffic_peers_amount',
+    )
 
     @admin.display(description='Available peers amount')
-    def get_available_peers_amount(obj):
+    def available_peers_amount(self, obj):
         return f'{obj.get_available_peers_amount()}'
 
     @admin.display(description='Peers amount')
-    def get_peers_amount(obj):
+    def peers_amount(self, obj):
         return f'{obj.get_peers_amount()}'
 
-    @admin.display(description='All traffic')
-    def getget_traffic_peers_amount(obj):
+    @admin.display(description='All traffic (GB)')
+    def traffic_peers_amount(self, obj):
         return f'{obj.get_traffic()}'
 
 
