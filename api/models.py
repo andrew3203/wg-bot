@@ -1,3 +1,4 @@
+from http import client
 from re import T, U
 from django.db import models
 from django.contrib.auth.models import BaseUserManager
@@ -34,9 +35,12 @@ class UserProfileManager(BaseUserManager):
         return self.create_user(username, password, **extra_fields)
 
 
-class BaseUser(AbstractBaseUser, PermissionsMixin):
-    user_id = models.PositiveBigIntegerField(primary_key=True)
-    username = models.CharField(max_length=32, unique=True)
+class Client(AbstractBaseUser, PermissionsMixin):
+    username = models.CharField(
+        _('name'),
+        max_length=32, 
+        unique=True
+    )
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -58,7 +62,14 @@ class BaseUser(AbstractBaseUser, PermissionsMixin):
         return f'{self.username}'
 
 
-class User(BaseUser):
+class User(models.Model):
+    client = models.ForeignKey(
+        'Client',
+        on_delete=models.CASCADE
+    )
+    username = models.CharField(max_length=32, unique=True)
+    user_id = models.PositiveBigIntegerField(primary_key=True, auto_created=True, blank=True)
+
     email = models.EmailField(max_length=255, blank=True)
 
     first_name = models.CharField(max_length=256, blank=True)
@@ -68,7 +79,7 @@ class User(BaseUser):
     balance = models.IntegerField(default=0)
 
     updated_at = models.DateTimeField(auto_now=True)
-   
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     invited_through_referral = models.OneToOneField(
         'Referral',
         related_name='invited_through_referral',
@@ -77,7 +88,17 @@ class User(BaseUser):
         null=True,
         blank=True
     )
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['user_id',]
 
+    def get_full_name(self):
+        return f'{self.username}'
+
+    def get_short_name(self):
+        return f'{self.username}'
+
+    def __str__(self):
+        return f'{self.username}'
     def get_invited_users_list(self):
         if self.invited_through_referral:
             return []
@@ -111,6 +132,7 @@ class Referral(models.Model):
         return User.objects.filter(invited_through_referral=self).count()
     
     get_uses_amount.allow_tags = True
+
 
 class Order(models.Model):
     user = models.ForeignKey(  # many-to-one
