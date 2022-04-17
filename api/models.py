@@ -9,21 +9,21 @@ from django.utils.translation import gettext_lazy as _
 
 
 class UserProfileManager(BaseUserManager):
-    def create_user(self, username, password, **extra_fields):
+    def create_user(self, clientname, password, **extra_fields):
         email = extra_fields.get('email', None)
         if email:
             extra_fields['email'] =  self.normalize_email(email) 
         password = self.make_random_password() if not password else password
 
-        if not username:
-            raise ValueError(_('The username must be set'))
+        if not clientname:
+            raise ValueError(_('The clientname must be set'))
 
-        user = self.model(username=username, **extra_fields)
+        user = self.model(clientname=clientname, **extra_fields)
         user.set_password(password)
         user.save()
         return user
 
-    def create_superuser(self, username, password, **extra_fields):
+    def create_superuser(self, clientname, password, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
@@ -32,12 +32,12 @@ class UserProfileManager(BaseUserManager):
             raise ValueError(_('Superuser must have is_staff=True.'))
         if extra_fields.get('is_superuser') is not True:
             raise ValueError(_('Superuser must have is_superuser=True.'))
-        return self.create_user(username, password, **extra_fields)
+        return self.create_user(clientname, password, **extra_fields)
 
 
 class Client(AbstractBaseUser, PermissionsMixin):
-    username = models.CharField(
-        _('name'),
+    clientname = models.CharField(
+        _('Nicname'),
         max_length=32, 
         unique=True
     )
@@ -49,26 +49,25 @@ class Client(AbstractBaseUser, PermissionsMixin):
 
     objects = UserProfileManager()
 
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['user_id',]
+    USERNAME_FIELD = 'clientname'
 
     def get_full_name(self):
-        return f'{self.username}'
+        return f'{self.clientname}'
 
     def get_short_name(self):
-        return f'{self.username}'
+        return f'{self.clientname}'
 
     def __str__(self):
-        return f'{self.username}'
+        return f'{self.clientname}'
 
 
 class User(models.Model):
-    client = models.ForeignKey(
+    client = models.OneToOneField(
         'Client',
         on_delete=models.CASCADE
     )
     username = models.CharField(max_length=32, unique=True)
-    user_id = models.PositiveBigIntegerField(primary_key=True, auto_created=True, blank=True)
+    tg_user_id = models.PositiveBigIntegerField(blank=True, default=0)
 
     email = models.EmailField(max_length=255, blank=True)
 
@@ -88,17 +87,10 @@ class User(models.Model):
         null=True,
         blank=True
     )
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['user_id',]
-
-    def get_full_name(self):
-        return f'{self.username}'
-
-    def get_short_name(self):
-        return f'{self.username}'
 
     def __str__(self):
         return f'{self.username}'
+
     def get_invited_users_list(self):
         if self.invited_through_referral:
             return []
@@ -117,7 +109,7 @@ class Referral(models.Model):
     )
     code = models.CharField(max_length=30)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-    finish_at = models.DateTimeField()
+    finish_at = models.DateTimeField(blank=True, null=True)
     
     def __str__(self) -> str:
         return f'{self.code}'
@@ -139,14 +131,19 @@ class Order(models.Model):
         'User',
         on_delete=models.CASCADE,
     )
-    tariff = models.OneToOneField(  # one-to-one
+    tariff = models.ForeignKey(  # one-to-one
         'Tariff',
         on_delete=models.SET_NULL,
         null=True
     )
     is_paid = models.BooleanField(default=False)
-    paid_at = models.DateTimeField()
-    finish_at = models.DateTimeField()
+    paid_at = models.DateTimeField(blank=True, null=True)
+    finish_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    def __str__(self):
+        return f'Order {self.id}: {self.tariff}'
+
 
 
 class Tariff(models.Model):
@@ -154,11 +151,17 @@ class Tariff(models.Model):
     traffic_amount = models.IntegerField()
     connections_amount = models.IntegerField(default=0)
 
+    def __str__(self):
+        return f'Tariff: t{self.traffic_amount}GB, p{self.price}, c{self.connections_amount}'
+
 
 class VpnServer(models.Model):
     ip = models.CharField(max_length=70)
     location = models.CharField(max_length=70)
     peers_amount = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f'Server: {self.location}'
 
     def get_available_peers_list(self):
         return Peer.objects.filter(server=self)
@@ -193,6 +196,9 @@ class Peer(models.Model):
         on_delete=models.CASCADE,
     )
     is_busy = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'Peer: {self.id}'
 
     def make_unbusy(self):
         self.server.update_traffic()
@@ -231,6 +237,9 @@ class BaseTraffic(models.Model):
     time = models.DateTimeField(auto_now_add=True, db_index=True)
     recived_gb = models.IntegerField(default=0)
     trancmitted_gb = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f'Traffic: {self.id}'
 
     def _convert_to_gb(self):
         # TODO

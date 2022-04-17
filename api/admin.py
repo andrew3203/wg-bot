@@ -2,25 +2,24 @@ from django.contrib import admin
 from api import models
 
 
-@admin.register(models.BaseUser)
-class BaseUserAdmin(admin.ModelAdmin):
+@admin.register(models.Client)
+class ClientAdmin(admin.ModelAdmin):
     list_display = (
-        'user_id', 'username',
+        'clientname',
         'is_active', 'is_staff',
         'created_at'
     )
     list_filter = ("is_active", "is_staff")
-    search_fields = ('username', 'user_id')
+    search_fields = ('clientname', 'user_id')
 
 
 @admin.register(models.User)
 class UserAdmin(admin.ModelAdmin):
     list_display = (
-        'user_id', 'username', 'balance',
-        'is_active', 'created_at', 'updated_at'
+        'tg_user_id', 'client', 'username', 'balance',
+        'created_at', 'updated_at'
     )
-    list_filter = ("is_active", "is_staff")
-    search_fields = ('username', 'user_id')
+    search_fields = ('client', 'user_id')
 
 
 @admin.register(models.Referral)
