@@ -3,48 +3,56 @@ version: "3.9"
 services:
   db:
     image: postgres
+    container_name: postgres
+    env_file:
+      - ./.env
     volumes:
       - ./data/db:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
 
   redis:
     image: "redis:alpine"
+    container_name: redis
+    env_file:
+      - ./.env
 
   celery:
     build: .
-    command: celery -A wg_control worker --uid=0 -l info
+    container_name: celery
+    command: celery -A wg_control worker -P prefork -l info
     volumes:
       - .:/code
     restart: on-failure
+    env_file:
+      - ./.env
     depends_on:
       - db
       - redis
 
   celery-beat:
     build: .
+    container_name: celery-beat
     command: celery -A wg_control beat -l info
     volumes:
       - .:/code
     restart: on-failure
+    env_file:
+      - ./.env
     depends_on:
       - db
       - redis
 
   web:
     build: .
+    container_name: web
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/code
     ports:
       - "8000:8000"
-    environment:
-      - POSTGRES_NAME=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+    env_file:
+      - ./.env
     restart: on-failure
     depends_on:
       - db
       - redis
+      - celery
