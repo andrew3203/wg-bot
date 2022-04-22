@@ -1,3 +1,4 @@
+from faulthandler import enable
 from http import client
 from re import T, U
 from django.db import models
@@ -66,7 +67,6 @@ class User(models.Model):
         'Client',
         on_delete=models.CASCADE
     )
-    username = models.CharField(max_length=32, unique=True)
     tg_user_id = models.PositiveBigIntegerField(blank=True, default=0)
 
     email = models.EmailField(max_length=255, blank=True)
@@ -89,7 +89,7 @@ class User(models.Model):
     )
 
     def __str__(self):
-        return f'{self.username}'
+        return f'{self.client.clientname}'
 
     def get_invited_users_list(self):
         if self.invited_through_referral:
@@ -191,16 +191,22 @@ class VpnServer(models.Model):
 
 
 class Peer(models.Model):
+    peer_id = models.CharField(unique=True, max_length=150)
+    public_key = models.CharField(unique=True, max_length=150)
     server = models.ForeignKey(  # many-to-one
         'VpnServer',
         on_delete=models.CASCADE,
     )
-    is_busy = models.BooleanField(default=False)
+    last_handshake = models.DateTimeField(blank=True, null=True)
+
+    is_booked = models.BooleanField(default=False)
+    enabled = models.BooleanField(default=True)
+    connected = models.BooleanField(default=False)
 
     def __str__(self):
         return f'Peer: {self.id}'
 
-    def make_unbusy(self):
+    def unbooke(self):
         self.server.update_traffic()
         self.is_busy = False
         self.save()

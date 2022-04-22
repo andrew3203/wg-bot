@@ -60,7 +60,6 @@ class UserSerializer(serializers.ModelSerializer):
         client.set_password(client_data['password'])
         client.save()
         user = models.User(
-            username=client_data['clientname'],
             client=client,
             **validated_data
         )
@@ -76,9 +75,10 @@ class ReferralSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'created_at': {'read_only': True},
             'finish_at': {'read_only': True},
-            'owner': {'read_only': True}
+            # 'owner': {'read_only': True}
         }
-    
+
+    """    
     def create(self, validated_data):
         referral = models.Referral.objects.create(
             owner=validated_data.pop('user'),
@@ -86,6 +86,7 @@ class ReferralSerializer(serializers.ModelSerializer):
         )
         referral.save()
         return referral
+    """
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -104,7 +105,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'created_at': {'read_only': True},
             'user': {'read_only': True},
         }
-
+    """
     def create(self, validated_data):
         order = models.Order.objects.create(
             user=validated_data.pop('user'),
@@ -121,6 +122,7 @@ class OrderSerializer(serializers.ModelSerializer):
             instance.save()
 
         return instance
+    """
 
 
 class TariffSerializer(serializers.ModelSerializer):

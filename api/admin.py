@@ -1,5 +1,7 @@
 from django.contrib import admin
 from api import models
+from .tasks import update_peers, update_traffic, check_users
+
 
 
 @admin.register(models.Client)
@@ -16,10 +18,21 @@ class ClientAdmin(admin.ModelAdmin):
 @admin.register(models.User)
 class UserAdmin(admin.ModelAdmin):
     list_display = (
-        'tg_user_id', 'client', 'username', 'balance',
+        'tg_user_id', 'client', 'balance',
         'created_at', 'updated_at'
     )
     search_fields = ('client', 'user_id')
+
+    actions = ['check_users_cmd', 'update_info']
+
+    def check_users_cmd(self, request, queryset):
+        user_ids = queryset.values_list('id', flat=True).distinct().iterator()
+        print(list(user_ids))
+        check_users.delay(user_ids=list(user_ids))
+    
+    def update_info(self, request, queryset):
+        user_ids = queryset.values_list('id', flat=True).distinct().iterator()
+        print(list(user_ids))
 
 
 @admin.register(models.Referral)
@@ -37,7 +50,7 @@ class ReferralAdmin(admin.ModelAdmin):
 
 
 @admin.register(models.Order)
-class OrderTrafficAdmin(admin.ModelAdmin):
+class OrderAdmin(admin.ModelAdmin):
     list_display = (
         'user', 'tariff', 'is_paid',
         'paid_at', 'finish_at',
@@ -67,6 +80,13 @@ class VpnServerAdmin(admin.ModelAdmin):
         'peers_amount',
         'traffic_peers_amount',
     )
+    actions = ['update_peers_cmd']
+
+    def update_peers_cmd(self, request, queryset):
+        vpn_server_ids = queryset.values_list('id', flat=True).distinct().iterator()
+        print(list(vpn_server_ids))
+        update_peers.delay(vpn_server_ids=list(vpn_server_ids))
+                      
 
     @admin.display(description='Available peers amount')
     def available_peers_amount(self, obj):
@@ -84,9 +104,11 @@ class VpnServerAdmin(admin.ModelAdmin):
 @admin.register(models.Peer)
 class PeerAdmin(admin.ModelAdmin):
     list_display = (
-        'server', 'is_busy',
+        'server', 'peer_id',
+        'is_booked', 'enabled', 'connected'
+
     )
-    list_filter = ("is_busy",)
+    list_filter = ('is_booked', 'enabled', 'connected')
     search_fields = ('server',)
 
 
