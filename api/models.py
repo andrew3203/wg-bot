@@ -46,6 +46,8 @@ class Client(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
+    server_addres = models.CharField(max_length=7, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     objects = UserProfileManager()

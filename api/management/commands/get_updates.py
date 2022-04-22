@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):
-    help = "Updates the traffic"
+    help = "Check users is not overla["
 
     def handle(self, *args, **options):
         pass

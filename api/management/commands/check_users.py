@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):
-    help = "Check users is not overla["
+    help = "Update peers list"
 
     def handle(self, *args, **options):
         pass
