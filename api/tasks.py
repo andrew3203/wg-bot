@@ -6,6 +6,8 @@ from celery.utils.log import get_task_logger
 from django.core.management import call_command
 
 from .models import *
+from .controllers import *
+
 
 logger = get_task_logger(__name__)
 
@@ -31,6 +33,10 @@ def check_users(user_ids):
 
 @shared_task(ignore_result=True)
 def update_vpn_server(vpn_server_id):
+    s = VpnServer.objects.get(id=vpn_server_id)
+    conection = Conection(s.ip)
+    peers_list = conection.get_peers_list()
+    stats = conection.get_peer_stats_list()
     logger.info(f'Servr {vpn_server_id} updated')
     return 1
 
