@@ -1,7 +1,7 @@
 import json
 import requests
 import time
-
+import os
 
 def make_request(f):
 
@@ -32,7 +32,7 @@ class Conection(object):
         self.protocol = 'http://'
         self.base_ip = base_ip
 
-        self.token = token if token else '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'
+        self.token = token if token else os.getenv('OAUTH_TOKEN')
         self.base_url = f'{self.protocol}{self.base_ip}'
 
     def update_token(self):
