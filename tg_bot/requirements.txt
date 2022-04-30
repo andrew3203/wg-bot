@@ -1,0 +1,17 @@
+pytz
+requests
+
+psycopg2-binary==2.8.6
+pusher==3.0.0
+python-decouple==3.4
+
+celery== 5.2.6
+daphne
+uvloop
+httptools
+
+redis==4.2.2
+
+python-telegram-bot==13.11
+
+

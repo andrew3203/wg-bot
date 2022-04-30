@@ -4,55 +4,79 @@ services:
   db:
     image: postgres
     container_name: postgres
-    env_file:
-      - ./.env
     volumes:
       - ./data/db:/var/lib/postgresql/data
+    env_file:
+      - .env
 
   redis:
     image: "redis:alpine"
     container_name: redis
     env_file:
-      - ./.env
+      - .env
 
   celery:
-    build: .
+    build: ./wg_control
     container_name: celery
     command: celery -A wg_control worker -P prefork -l info
-    volumes:
-      - .:/code
     restart: on-failure
+    volumes:
+      - ./wg_control:/code
     env_file:
-      - ./.env
+      - .env
     depends_on:
       - db
       - redis
 
   celery-beat:
-    build: .
+    build: ./wg_control
     container_name: celery-beat
     command: celery -A wg_control beat -l info
-    volumes:
-      - .:/code
     restart: on-failure
+    volumes:
+      - ./wg_control:/code
     env_file:
-      - ./.env
+      - .env
     depends_on:
       - db
       - redis
 
   web:
-    build: .
+    build: ./wg_control
     container_name: web
     command: python manage.py runserver 0.0.0.0:8000
+    restart: on-failure
     volumes:
-      - .:/code
+      - ./wg_control:/code
     ports:
       - "8000:8000"
     env_file:
-      - ./.env
-    restart: on-failure
+      - .env
     depends_on:
       - db
       - redis
       - celery
+
+  telegram:
+    build: ./tg_bot
+    container_name: telegram
+    command: python bot/dispacher.py
+    restart: on-failure
+    volumes:
+      - ./tg_bot:/code
+    env_file:
+      - .env
+    depends_on:
+      - redis
+  
+  telegram-celery:
+    build: ./tg_bot
+    container_name: telegram-celery
+    command: celery -A bot worker -P prefork -l info
+    volumes:
+      - ./tg_bot:/code
+    restart: on-failure
+    env_file:
+      - .env
+    depends_on:
+      - redis
