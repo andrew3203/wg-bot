@@ -7,6 +7,8 @@ from telegram import (
 )
 
 from conf import logger
+from utils.texts import get_text
+from .utils.handlers import send_message
 
 menu_btns = [
     [KeyboardButton('VPN серверы'), KeyboardButton('Выбрать тариф')],
@@ -17,11 +19,9 @@ menu_btns = [
 def start(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
     logger.info("START command entered")
-    update.message.reply_text(
-        'Привет!', 
-        reply_markup=ReplyKeyboardMarkup(menu_btns)
-    )
+    send_message(user.id, text=get_text('start_text'), reply_markup=ReplyKeyboardMarkup(menu_btns))
 
 def echo(update: Update, context: CallbackContext) -> None:
+    user = update.effective_user
     logger.info("Text message recived")
-    update.message.reply_text(update.message.text, reply_markup=ReplyKeyboardRemove())
+    send_message(user.id, text=update.message.text, reply_markup=ReplyKeyboardRemove())

@@ -1,6 +1,8 @@
 import os
 import logging
-from datetime import timedelta
+from datetime import date, timedelta
+from pytz import timezone
+
 
 
 DEBUG = not not os.getenv("DJANGO_DEBUG", False)
@@ -25,12 +27,15 @@ REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379')
 # time when note in Redis  expires
 DEFAULT_TIMEDELTA = timedelta(hours=1)
 
+# Timezome
+TIME_ZONE = 'Europe/Moscow'
+ES_MOSCOW = timezone(TIME_ZONE)
+
 # Celery
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Europe/Moscow'
+CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_DEFAULT_QUEUE = 'default'
-CELERY_ALWAYS_EAGER = DEBUG

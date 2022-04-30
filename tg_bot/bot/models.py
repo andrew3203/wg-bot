@@ -1,5 +1,4 @@
 from unittest.mock import DEFAULT
-from xmlrpc.client import Boolean
 import redis
 from conf import REDIS_URL, DEFAULT_TIMEDELTA
 

@@ -1,5 +1,12 @@
 import requests
+from celery_settings import app
+from celery.utils.log import get_task_logger
+
 from conf import TG_CLIENT_PASSWORD, TG_CLIENT_TOKEN, TG_CLIENT_NAME
+
+
+logger = get_task_logger(__name__)
+
 
 class Client(object):
 
@@ -25,16 +32,20 @@ class User(object):
     def get():
         pass
 
+    
     @staticmethod
+    @app.task()
     def get_user(user_id):
-        pass
+        logger.info(f'User {user_id} data resivied')
 
     def update(*args, **kwargs):
         pass
 
     @staticmethod
+    @app.task()
     def update_user(user_id, *args, **kwargs):
-        pass
+        logger.info(f'User {user_id} data updated')
+
 
     def update():
         pass
@@ -53,14 +64,16 @@ class Order(object):
 
     def get(tg_id):
         pass
-
+    
+    #@celery_app.task(name='get_order')
     @staticmethod
-    def get(order_id):
+    def get_order(order_id):
         pass
 
     def update(*args, **kwargs):
         pass
     
+    #@celery_app.task(name='order_update')
     @staticmethod
     def order_update(order_id, *args, **kwargs):
         pass
@@ -73,14 +86,16 @@ class VpnServer(object):
 
     def __init__(self) -> None:
         pass
-
+    
+    #@celery_app.task(name='get_vpns_list')
     @staticmethod
     def get_vpns_list():
         pass
     
     def get():
         pass
-
+    
+    #@celery_app.task(name='get_vpn')
     @staticmethod
     def get_vpn(vpn_id):
         pass
