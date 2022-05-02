@@ -109,6 +109,9 @@ class PeerAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         'all_traffic',
+        'recived_bytes',
+        'trancmitted_bytes',
+        'data_time_update'
     )
 
     @admin.display(description='Traffic')

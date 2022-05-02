@@ -204,6 +204,13 @@ class Peer(models.Model):
         # TODO
         pass
 
+    def get_traffic(self):
+        return self.recived_bytes + self.trancmitted_bytes
+
+    def get_traffic_label(self):
+        traffic = self.get_traffic() / 1024 ** 3
+        return f'{traffic:.3f} GiB'
+
 
 class Order(models.Model):
     user = models.ForeignKey(  # many-to-one

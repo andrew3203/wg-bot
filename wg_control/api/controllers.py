@@ -71,7 +71,7 @@ class Conection(object):
         print(url)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
-        return response
+        return response, False
 
     @make_request
     def get_peer_stats_list(self):
@@ -79,7 +79,7 @@ class Conection(object):
         print(url)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
-        return response
+        return response, False
 
     @make_request
     def get_peer_config(self, peer_id):
@@ -87,7 +87,7 @@ class Conection(object):
         print(url)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
-        return response
+        return response, True
 
     @make_request
     def get_peer_qrcode(self, peer_id):
@@ -95,7 +95,7 @@ class Conection(object):
         print(url)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
-        return response
+        return response, True
 
     @make_request
     def edit_peer(self, peer_id, data):
@@ -104,7 +104,7 @@ class Conection(object):
         headers = self.get_headers()
         data = json.dumps(data).encode('utf-8')
         response = requests.patch(url, headers=headers, data=data)
-        return response
+        return response, False
 
     @make_request
     def add_peer(self, name, email='', tags=[]):
@@ -120,7 +120,7 @@ class Conection(object):
         headers = self.get_headers()
         data = json.dumps(data).encode('utf-8')
         response = requests.post(url, headers=headers, data=data)
-        return response
+        return response, False
 
     @make_request
     def revoke_peer(self, peer_id):
@@ -128,7 +128,7 @@ class Conection(object):
         print(url)
         headers = self.get_headers()
         response = requests.delete(url, headers=headers)
-        return response
+        return response, False
 
     @make_request
     def get_peer(self, peer_id):
@@ -136,6 +136,6 @@ class Conection(object):
         print(url)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
-        return response
+        return response, False
 
 

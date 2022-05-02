@@ -44,19 +44,22 @@ def check_users(user_ids=None):
 def update_vpn_server(vpn_server_id):
     s = VpnServer.objects.get(id=vpn_server_id)
     logger.info(f' - - - - {s} {s.ip} - - - - -')
-    conection = Conection(s.ip, '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')
+    conection = Conection(s.ip)
     peers_list = conection.get_peers_list()
     peers_list = sorted(peers_list, key=lambda el: el['name'])
 
     stats = conection.get_peer_stats_list()
     stats = sorted(stats, key=lambda el: el['name'])
 
-    curent_time = timezone.now()
-
     recived_bytes = 0
     trancmitted_bytes = 0
     for peer, stat in zip(peers_list, stats):
         public_key = peer['publicKey']
+        rel_peer = Peer.objects.filter(public_key=public_key).first()
+        if rel_peer is not None and rel_peer.trancmitted_bytes > stat['transmittedBytes']:
+             stat['transmittedBytes'] += rel_peer.trancmitted_bytes
+             stat['recived_bytes'] += rel_peer.recived_bytes
+        
         peer_data = {
             'peer_id': peer['id'],
             'public_key': public_key,
@@ -69,28 +72,15 @@ def update_vpn_server(vpn_server_id):
             'trancmitted_bytes': stat['transmittedBytes'],
         }
 
-        peer = Peer.objects.filter(public_key=public_key).first()
-        serializer = PeerSerializer(data=peer_data, instance=peer)
-        serializer.is_valid(raise_exception=True)
-        peer = serializer.save()
-        logger.info(f'Peer {public_key[:10]} updated')
-
-        traffic_peer_data = {
-            'time': curent_time,
-            'recived_bytes': stat['receivedBytes'],
-            'trancmitted_bytes': stat['transmittedBytes'],
-            'peer': peer.id,
-        }
-        recived_bytes += stat['receivedBytes']
-        trancmitted_bytes += stat['transmittedBytes']
-
-        serializer = PeerTrafficSerializer(data=traffic_peer_data)
+        serializer = PeerSerializer(data=peer_data, instance=rel_peer)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         logger.info(f'Peer {public_key[:10]} updated')
 
+        recived_bytes += stat['receivedBytes']
+        trancmitted_bytes += stat['transmittedBytes']
+
     traffic_server_data = {
-        'time': curent_time,
         'recived_bytes': recived_bytes,
         'trancmitted_bytes': trancmitted_bytes,
         'server': vpn_server_id,
