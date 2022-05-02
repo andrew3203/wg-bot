@@ -14,7 +14,6 @@ router.register('tariff', views.TarifViewSet)
 router.register('vpn-server', views.VpnServerViewSet)
 router.register('peer', views.PeerViewSet)
 router.register('server-traffic', views.ServerTrafficViewSet)
-router.register('peer-traffic', views.PeerTrafficViewSet)
 router.register('login', views.LoginViewSet, basename='login')
 
 

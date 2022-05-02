@@ -1,19 +1,19 @@
-from faulthandler import enable
-from http import client
-from re import T, U
+from turtle import back
 from django.db import models
 from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
+from .controllers import Conection
+from wg_control.celery import send_notify
 
 class UserProfileManager(BaseUserManager):
     def create_user(self, clientname, password, **extra_fields):
         email = extra_fields.get('email', None)
         if email:
-            extra_fields['email'] =  self.normalize_email(email) 
+            extra_fields['email'] = self.normalize_email(email)
         password = self.make_random_password() if not password else password
 
         if not clientname:
@@ -39,7 +39,7 @@ class UserProfileManager(BaseUserManager):
 class Client(AbstractBaseUser, PermissionsMixin):
     clientname = models.CharField(
         _('Nicname'),
-        max_length=32, 
+        max_length=32,
         unique=True
     )
 
@@ -98,7 +98,7 @@ class User(models.Model):
             return []
         else:
             return User.objects.filter(personal_referral=self.invited_through_referral)
-    
+
     def get_invited_users_amount(self):
         return len(self.get_invited_users_list())
 
@@ -112,7 +112,7 @@ class Referral(models.Model):
     code = models.CharField(max_length=30)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     finish_at = models.DateTimeField(blank=True, null=True)
-    
+
     def __str__(self) -> str:
         return f'{self.code}'
 
@@ -124,28 +124,8 @@ class Referral(models.Model):
 
     def get_uses_amount(self):
         return User.objects.filter(invited_through_referral=self).count()
-    
+
     get_uses_amount.allow_tags = True
-
-
-class Order(models.Model):
-    user = models.ForeignKey(  # many-to-one
-        'User',
-        on_delete=models.CASCADE,
-    )
-    tariff = models.ForeignKey(  # one-to-one
-        'Tariff',
-        on_delete=models.SET_NULL,
-        null=True
-    )
-    is_paid = models.BooleanField(default=False)
-    paid_at = models.DateTimeField(blank=True, null=True)
-    finish_at = models.DateTimeField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-
-    def __str__(self):
-        return f'Order {self.id}: {self.tariff}'
-
 
 
 class Tariff(models.Model):
@@ -160,13 +140,12 @@ class Tariff(models.Model):
 class VpnServer(models.Model):
     ip = models.CharField(max_length=70)
     location = models.CharField(max_length=70)
-    peers_amount = models.IntegerField(default=0)
 
     def __str__(self):
         return f'Server: {self.location}'
 
     def get_available_peers_list(self):
-        return Peer.objects.filter(server=self)
+        return Peer.objects.filter(server=self, is_booked=False)
 
     def get_available_peers_amount(self):
         return self.get_available_peers_list().count()
@@ -178,18 +157,12 @@ class VpnServer(models.Model):
         return ServerTraffic.objects.filter(server=self)
 
     def get_traffic(self):
-        amount = 0
-        for obj in self.get_traffic_list():
-            amount += obj.get_traffic()
-        return amount
+        traffic = self.get_traffic_list().first()
+        return traffic.get_traffic()
 
-    def update_traffic(self):
-        new_traffic = ServerTraffic()
-        for peer in self.get_available_peers_list():
-            recived_gb, trancmitted_gb = peer.get_traffic()
-            new_traffic.recived_gb += recived_gb
-            new_traffic.trancmitted_gb += trancmitted_gb
-        new_traffic.save()
+    def get_traffic_label(self):
+        traffic = self.get_traffic_list().first()
+        return f'{traffic.get_traffic_gb():.3f} GiB'
 
 
 class Peer(models.Model):
@@ -205,12 +178,22 @@ class Peer(models.Model):
     enabled = models.BooleanField(default=True)
     connected = models.BooleanField(default=False)
 
+    data_time_update = models.DateTimeField(auto_now_add=True)
+    recived_bytes = models.BigIntegerField(default=0)
+    trancmitted_bytes = models.BigIntegerField(default=0)
+
     def __str__(self):
         return f'Peer: {self.id}'
 
     def unbooke(self):
-        self.server.update_traffic()
-        self.is_busy = False
+        self.last_handshake = None
+
+        self.is_booked = False
+        self.enabled = False
+        self.connected = False
+
+        self.recived_bytes = 0
+        self.trancmitted_bytes = 0
         self.save()
 
     def get_qrcode(self):
@@ -221,59 +204,97 @@ class Peer(models.Model):
         # TODO
         pass
 
-    def get_traffic_list(self):
-        return PeerTraffic.objects.filter(peer=self)
 
-    def get_traffic(self):
-        recived_gb = 0
-        trancmitted_gb = 0
-        for obj in self.get_traffic_list():
-            recived_gb += obj.recived_gb
-            trancmitted_gb += obj.trancmitted_gb
-        return recived_gb, trancmitted_gb
-
-    def get_all_traffic(self):
-        recived_gb, trancmitted_gb = self.get_traffic()
-        return recived_gb + trancmitted_gb
-
-    def update_traffic(self):
-        # TODO: conect to api
-        pass
-
-
-class BaseTraffic(models.Model):
-    time = models.DateTimeField(auto_now_add=True, db_index=True)
-    recived_gb = models.IntegerField(default=0)
-    trancmitted_gb = models.IntegerField(default=0)
-
-    def __str__(self):
-        return f'Traffic: {self.id}'
-
-    def _convert_to_gb(self):
-        # TODO
-        pass
-
-    def get_traffic(self):
-        return self.recived_gb + self.trancmitted_gb
-
-    def set_traffic(self, recived, trancmitted):
-        self.recived_gb = self._convert_to_gb(recived)
-        self.trancmitted_gb = self._convert_to_gb(trancmitted)
-
-
-class PeerTraffic(BaseTraffic):
-    peer = models.ForeignKey(  # many-to-one
-        'Peer',
+class Order(models.Model):
+    user = models.ForeignKey(  # many-to-one
+        'User',
         on_delete=models.CASCADE,
     )
+    tariff = models.ForeignKey(  # one-to-one
+        'Tariff',
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    peers = models.ManyToManyField(
+        Peer,
+        related_name='order',
+        default=None,
+        blank=True,
+        null=True
+    )
+
+    auto_renewal = models.BooleanField(default=False)
+    is_closed = models.BooleanField(default=False)
+
+    is_paid = models.BooleanField(default=False)
+    paid_at = models.DateTimeField(blank=True, null=True)
+    finish_at = models.DateTimeField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Order {self.id}: {self.tariff}'
+
+    def order_is_valid(self, user):
+        if self.is_paid and not self.is_closed:
+
+            if self.finish_at > timezone.now():
+                return True
+
+            elif self.auto_renewal:
+
+                if user.balance > self.tariff.price:
+                    user.balance -= self.tariff.price
+                    user.save()
+                    send_notify.delay(
+                        user, 'order_auto_renewaled', order_id=self.id)
+                    return True
+
+                else:
+                    send_notify.delay(
+                        user, 'have_no_balance_to_auto_renewale', order_id=self.id)
+                    return False
+
+            else:
+                send_notify.delay(user, 'order_closed', order_id=self.id)
+                return False
+
+        else:
+            return True
+
+    def close(self):
+        for peer in Peer.objects.filter(order=self):
+            ip = peer.server.ip
+            conect = Conection(ip)
+            peer_json = conect.get_peer(peer.peer_id)
+            peer_json['enable'] = False
+            conect.edit_peer(peer.peer_id, data=peer_json)
+            peer.unbooke()
 
 
-class ServerTraffic(BaseTraffic):
+class ServerTraffic(models.Model):
     server = models.ForeignKey(  # many-to-one
         'VpnServer',
         on_delete=models.CASCADE,
     )
 
-    def update_traffic(self, recived_gb, trancmitted_gb):
-        self.recived_gb += recived_gb
-        self.trancmitted_gb += trancmitted_gb
+    time = models.DateTimeField(auto_now_add=True, db_index=True)
+    recived_bytes = models.BigIntegerField(default=0)
+    trancmitted_bytes = models.BigIntegerField(default=0)
+
+    class Meta:
+        ordering = ['-time']
+
+    def __str__(self):
+        return f'Traffic: {self.id}'
+
+    def get_traffic_gb(self):
+        bs = self.get_traffic()
+        return bs / 1024**3
+
+    def get_traffic(self):
+        return self.recived_bytes + self.trancmitted_bytes

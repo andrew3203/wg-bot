@@ -2,7 +2,7 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 from handlers.handlers import *
-from conf import TELEGRAM_TOKEN
+from settings import TELEGRAM_TOKEN
 
 
 def setup_dispatcher(dispatcher) -> None:

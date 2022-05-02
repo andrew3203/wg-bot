@@ -146,13 +146,6 @@ class PeerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class PeerTrafficSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = models.PeerTraffic
-        fields = '__all__'
-
-
 class ServerTrafficSerializer(serializers.ModelSerializer):
 
     class Meta:

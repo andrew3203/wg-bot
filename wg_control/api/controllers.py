@@ -34,6 +34,7 @@ class Conection(object):
 
         self.token = token if token else os.getenv('OAUTH_TOKEN')
         self.base_url = f'{self.protocol}{self.base_ip}'
+        print(self.base_url)
 
     def update_token(self):
         pass
@@ -70,7 +71,7 @@ class Conection(object):
         print(url)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
-        return response, False
+        return response
 
     @make_request
     def get_peer_stats_list(self):
@@ -78,7 +79,7 @@ class Conection(object):
         print(url)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
-        return response, False
+        return response
 
     @make_request
     def get_peer_config(self, peer_id):
@@ -86,7 +87,7 @@ class Conection(object):
         print(url)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
-        return response, True
+        return response
 
     @make_request
     def get_peer_qrcode(self, peer_id):
@@ -94,7 +95,7 @@ class Conection(object):
         print(url)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
-        return response, True
+        return response
 
     @make_request
     def edit_peer(self, peer_id, data):
@@ -103,7 +104,7 @@ class Conection(object):
         headers = self.get_headers()
         data = json.dumps(data).encode('utf-8')
         response = requests.patch(url, headers=headers, data=data)
-        return response, False
+        return response
 
     @make_request
     def add_peer(self, name, email='', tags=[]):
@@ -119,7 +120,7 @@ class Conection(object):
         headers = self.get_headers()
         data = json.dumps(data).encode('utf-8')
         response = requests.post(url, headers=headers, data=data)
-        return response, False
+        return response
 
     @make_request
     def revoke_peer(self, peer_id):
@@ -127,5 +128,14 @@ class Conection(object):
         print(url)
         headers = self.get_headers()
         response = requests.delete(url, headers=headers)
-        return response, False
+        return response
+
+    @make_request
+    def get_peer(self, peer_id):
+        url = self._get_peer_url(peer_id)
+        print(url)
+        headers = self.get_headers()
+        response = requests.get(url, headers=headers)
+        return response
+
 

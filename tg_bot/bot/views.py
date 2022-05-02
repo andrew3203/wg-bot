@@ -1,11 +1,11 @@
 import requests
-from celery_settings import app
-from celery.utils.log import get_task_logger
+#from celery_settings import app
+#from celery.utils.log import get_task_logger
 
-from conf import TG_CLIENT_PASSWORD, TG_CLIENT_TOKEN, TG_CLIENT_NAME
+from settings import TG_CLIENT_PASSWORD, TG_CLIENT_TOKEN, TG_CLIENT_NAME
 
 
-logger = get_task_logger(__name__)
+#logger = get_task_logger(__name__)
 
 
 class Client(object):
@@ -34,17 +34,19 @@ class User(object):
 
     
     @staticmethod
-    @app.task()
+    #@app.task()
     def get_user(user_id):
-        logger.info(f'User {user_id} data resivied')
+        pass
+        #logger.info(f'User {user_id} data resivied')
 
     def update(*args, **kwargs):
         pass
 
     @staticmethod
-    @app.task()
+    #@app.task()
     def update_user(user_id, *args, **kwargs):
-        logger.info(f'User {user_id} data updated')
+        pass
+        #logger.info(f'User {user_id} data updated')
 
 
     def update():

@@ -74,7 +74,7 @@ class VpnServerAdmin(admin.ModelAdmin):
     readonly_fields = (
         'available_peers_amount',
         'peers_amount',
-        'traffic_peers_amount',
+        'all_traffic',
     )
     actions = ['get_updates_cmd']
 
@@ -92,33 +92,33 @@ class VpnServerAdmin(admin.ModelAdmin):
     def peers_amount(self, obj):
         return f'{obj.get_peers_amount()}'
 
-    @admin.display(description='All traffic (GB)')
-    def traffic_peers_amount(self, obj):
-        return f'{obj.get_traffic()}'
+    @admin.display(description='All traffic')
+    def all_traffic(self, obj):
+        return f'{obj.get_traffic_label()}'
 
 
 @admin.register(models.Peer)
 class PeerAdmin(admin.ModelAdmin):
     list_display = (
-        'server', 'peer_id',
+        'server', 'public_key',
         'is_booked', 'enabled', 'connected'
 
     )
     list_filter = ('is_booked', 'enabled', 'connected')
-    search_fields = ('server',)
+    search_fields = ('server', 'public_key')
 
-
-@admin.register(models.PeerTraffic)
-class PeerTrafficAdmin(admin.ModelAdmin):
-    list_display = (
-        'recived_gb', 'trancmitted_gb', 'time', 'peer',
+    readonly_fields = (
+        'all_traffic',
     )
-    search_fields = ('peer',)
+
+    @admin.display(description='Traffic')
+    def all_traffic(self, obj):
+        return f'{obj.get_traffic_label()}'
 
 
 @admin.register(models.ServerTraffic)
 class ServerTrafficAdmin(admin.ModelAdmin):
     list_display = (
-        'recived_gb', 'trancmitted_gb', 'time', 'server',
+        'recived_bytes', 'trancmitted_bytes', 'time', 'server',
     )
     search_fields = ('server',)

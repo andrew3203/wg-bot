@@ -1,7 +1,8 @@
 from telegram import ParseMode, Bot
 from telegram.error import Unauthorized
 from typing import Optional, Dict, List
-from conf import TELEGRAM_TOKEN
+
+from settings import TELEGRAM_TOKEN
 
 from views import *
 

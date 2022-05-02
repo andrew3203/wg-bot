@@ -9,6 +9,7 @@ WORKDIR /code
 COPY requirements.txt /code/
 RUN apt-get update \
     && apt-get -y install libpq-dev gcc \
+    && apt-get install tk -y \
     && pip install -U pip \
     && pip install -r requirements.txt
 

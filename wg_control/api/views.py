@@ -1,4 +1,3 @@
-from http import client
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status
@@ -36,15 +35,15 @@ class ReferralViewSet(viewsets.ModelViewSet):
     queryset = models.Referral.objects.all()
     permission_classes = [p.IsReferralOwnerOrReadOnly]
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = models.User.objects.get(
-            client=request.user,
-        )
-        serializer.save(user)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    # def create(self, request, *args, **kwargs):
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     user = models.User.objects.get(
+    #         client=request.user,
+    #     )
+    #     serializer.save(user)
+    #     headers = self.get_success_headers(serializer.data)
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -53,15 +52,15 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = models.Order.objects.all()
     permission_classes = [p.IsOrderOwner]
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = models.User.objects.get(
-            client=request.user,
-        )
-        serializer.save(user)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    # def create(self, request, *args, **kwargs):
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     user = models.User.objects.get(
+    #         client=request.user,
+    #     )
+    #     serializer.save(user)
+    #     headers = self.get_success_headers(serializer.data)
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class TarifViewSet(viewsets.ModelViewSet):
@@ -89,13 +88,6 @@ class ServerTrafficViewSet(viewsets.ModelViewSet):
 
     serializer_class = serializers.ServerTrafficSerializer
     queryset = models.ServerTraffic.objects.all()
-    permission_classes = [p.ReadOnly | IsAdminUser]
-
-
-class PeerTrafficViewSet(viewsets.ModelViewSet):
-
-    serializer_class = serializers.PeerTrafficSerializer
-    queryset = models.PeerTraffic.objects.all()
     permission_classes = [p.ReadOnly | IsAdminUser]
 
 

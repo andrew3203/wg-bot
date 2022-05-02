@@ -4,6 +4,6 @@ from celery import Celery
 
 os.environ.setdefault('TG_BOT_SETTINGS_MODULE', 'bot.conf')
 
-app = Celery('bot')
-app.config_from_object('bot.conf', namespace='CELERY')
-app.autodiscover_tasks()
+#app = Celery('bot')
+#app.config_from_object('bot.conf', namespace='CELERY')
+#app.autodiscover_tasks(related_name='views')

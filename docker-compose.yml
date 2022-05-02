@@ -66,17 +66,5 @@ services:
       - ./tg_bot:/code
     env_file:
       - .env
-    depends_on:
-      - redis
   
-  telegram-celery:
-    build: ./tg_bot
-    container_name: telegram-celery
-    command: celery -A bot worker -P prefork -l info
-    volumes:
-      - ./tg_bot:/code
-    restart: on-failure
-    env_file:
-      - .env
-    depends_on:
-      - redis
+
