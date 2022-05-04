@@ -87,6 +87,7 @@ class Client(AbstractBaseUser, PermissionsMixin):
 class User(models.Model):
     client = models.OneToOneField(
         'Client',
+        related_name='user',
         on_delete=models.CASCADE
     )
     tg_user_id = models.PositiveBigIntegerField(blank=True, default=0)
@@ -153,6 +154,9 @@ class Tariff(models.Model):
     traffic_amount = models.IntegerField()
     connections_amount = models.IntegerField(default=0)
 
+    class Meta:
+        ordering = ['price']
+
     def __str__(self):
         return f'Tariff: t{self.traffic_amount}GB, p{self.price}, c{self.connections_amount}'
 
@@ -183,6 +187,17 @@ class VpnServer(models.Model):
     def get_traffic_label(self):
         traffic = self.get_traffic_list().first()
         return f'{traffic.get_traffic_gb():.3f} GiB'
+    
+    def get_available_tariffs(self, amout=None):
+        amount = self.get_available_peers_amount()
+        tariffs = Tariff.objects.filter(connections_amount__lte=amount)
+        return tariffs[:amout] if tariffs else tariffs
+
+    @staticmethod
+    def get_peer_ids(server, tariff):
+        peers = Peer.objects.filter(server=server, is_booked=False).values_list('id', flat=True)
+        return peers[:tariff.connections_amount]
+
 
 
 class Peer(models.Model):
@@ -242,12 +257,15 @@ class Order(models.Model):
         on_delete=models.SET_NULL,
         null=True
     )
+    server = models.ForeignKey(  # one-to-one
+        'VpnServer', 
+        on_delete=models.SET_NULL,
+        null=True
+    )
 
     peers = models.ManyToManyField(
         Peer,
         related_name='order',
-        default=None,
-        blank=True,
         null=True
     )
 
@@ -294,6 +312,8 @@ class Order(models.Model):
             return True
 
     def close(self):
+        self.is_closed = True
+        self.save()
         for peer in Peer.objects.filter(order=self):
             ip = peer.server.ip
             conect = Conection(ip)

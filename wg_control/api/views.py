@@ -1,3 +1,4 @@
+from multiprocessing import context
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status, viewsets
@@ -36,7 +37,6 @@ class UserViewSet(viewsets.ModelViewSet):
         return query_set
 
 
-
 class ReferralViewSet(viewsets.ModelViewSet):
 
     serializer_class = serializers.ReferralSerializer
@@ -68,7 +68,6 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [p.IsOwnerOrAdminUser]
     queryset = models.Order.objects.all()
 
-
     def get_queryset(self):
         queryset = self.queryset
         if self.request.user.is_superuser or self.request.user.is_staff:
@@ -78,15 +77,33 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         return query_set
 
-    # def create(self, request, *args, **kwargs):
-    #     serializer = self.get_serializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     user = models.User.objects.get(
-    #         client=request.user,
-    #     )
-    #     serializer.save(user)
-    #     headers = self.get_success_headers(serializer.data)
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    @action(methods=['GET'], detail=False, url_path='closed_order')
+    def closed_orders(self, request, *args, **kwargs):
+        orders = models.Order.objects.filter(is_closed=True)
+        res = serializers.OrderSerializer(orders, many=True)
+        return Response(res.data)
+
+    @action(methods=['GET'], detail=False, url_path='unpayid_orders')
+    def unpayid_orders(self, request, *args, **kwargs):
+        orders = models.Order.objects.filter(is_paid=False, is_closed=False)
+        res = serializers.OrderSerializer(orders, many=True)
+        return Response(res.data)
+
+    @action(methods=['GET'], detail=False, url_path='current_orders')
+    def current_orders(self, request, *args, **kwargs):
+        orders = models.Order.objects.filter(is_paid=True, is_closed=False)
+        res = serializers.OrderSerializer(orders, many=True)
+        return Response(res.data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        client = request.user
+        user = models.User.objects.get(
+            id=request.data['user']) if client.is_staff or client.is_superuser else client.user
+        serializer.save(real_user=user)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class TarifViewSet(viewsets.ModelViewSet):
@@ -101,6 +118,13 @@ class VpnServerViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.VpnServerSerializer
     queryset = models.VpnServer.objects.all()
     permission_classes = [p.ReadOnly | IsAdminUser]
+
+    @action(methods=['GET'], detail=True)
+    def available_tariffs(self, request, *args, **kwargs):
+        server = self.get_object()
+        tariffs = server.get_available_tariffs()
+        res = serializers.OrderSerializer(tariffs, many=True)
+        return Response(res.data)
 
 
 class PeerViewSet(viewsets.ModelViewSet):
@@ -117,11 +141,9 @@ class ServerTrafficViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated | IsAdminUser]
 
 
-
 class LoginViewSet(viewsets.ViewSet):
 
     serializer_class = AuthTokenSerializer
 
     def create(self, request):
-
         return ObtainAuthToken().as_view()(request=request._request)

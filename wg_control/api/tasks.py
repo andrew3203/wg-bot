@@ -7,10 +7,7 @@ from django.utils import timezone
 
 from .models import User, VpnServer, Order, Peer
 from .controllers import *
-from .serializers import (
-    VpnServerSerializer, PeerSerializer,
-    ServerTrafficSerializer
-)
+from .serializers import PeerSerializer, ServerTrafficSerializer
 
 
 logger = get_task_logger(__name__)
