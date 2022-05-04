@@ -4,7 +4,7 @@ from rest_framework import status
 
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAdminUser
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 
@@ -26,14 +26,14 @@ class UserViewSet(viewsets.ModelViewSet):
 
     serializer_class = serializers.UserSerializer
     queryset = models.User.objects.all()
-    permission_classes = [p.IsNotAuthenticated | p.IsUsertOwner]
+    permission_classes = [p.IsOwnerOrAdminUser]
 
 
 class ReferralViewSet(viewsets.ModelViewSet):
 
     serializer_class = serializers.ReferralSerializer
     queryset = models.Referral.objects.all()
-    permission_classes = [p.IsReferralOwnerOrReadOnly]
+    permission_classes = [p.IsOwnerOrAdminUser]
 
     # def create(self, request, *args, **kwargs):
     #     serializer = self.get_serializer(data=request.data)
@@ -50,7 +50,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     serializer_class = serializers.OrderSerializer
     queryset = models.Order.objects.all()
-    permission_classes = [p.IsOrderOwner]
+    permission_classes = [p.IsOwnerOrAdminUser]
 
     # def create(self, request, *args, **kwargs):
     #     serializer = self.get_serializer(data=request.data)

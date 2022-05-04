@@ -8,13 +8,33 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from .controllers import Conection
 from wg_control.celery import send_notify
+from random import randint
+
+
+def gen_code():
+    min_lenght, max_lenght = 10, 15
+    lenght = randint(min_lenght, max_lenght)
+    base = 'abcdefghijklomopqrstuvwsynzABCDEFGHIJKLOMOPQRSTUVWSYNZ'
+    N = len(base)
+    return 'pro_'+''.join([base[randint(0, N-1)] for i in range(lenght)])
+
 
 class UserProfileManager(BaseUserManager):
-    def create_user(self, clientname, password, **extra_fields):
+
+    def get_or_create(self, clientname, password=None, **extra_fields):
+        inst = self.filter(clientname=clientname).first()
+
+        if inst is None:
+            inst = self.create_user(self, clientname, password, **extra_fields)
+            return inst, True
+        else:
+            return inst, False
+
+    def create_user(self, clientname, password=None, **extra_fields):
         email = extra_fields.get('email', None)
         if email:
             extra_fields['email'] = self.normalize_email(email)
-        password = self.make_random_password() if not password else password
+        password = self.make_random_password() if password is None else password
 
         if not clientname:
             raise ValueError(_('The clientname must be set'))
@@ -46,7 +66,7 @@ class Client(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
-    server_addres = models.CharField(max_length=7, blank=True)
+    server_addres = models.CharField(max_length=70, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
@@ -109,7 +129,7 @@ class Referral(models.Model):
         on_delete=models.SET_NULL,
         null=True,
     )
-    code = models.CharField(max_length=30)
+    code = models.CharField(max_length=30, default=gen_code, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     finish_at = models.DateTimeField(blank=True, null=True)
 
@@ -120,7 +140,7 @@ class Referral(models.Model):
         pass
 
     def is_active(self):
-        pass
+        return self.finish_at > timezone.now()
 
     def get_uses_amount(self):
         return User.objects.filter(invited_through_referral=self).count()

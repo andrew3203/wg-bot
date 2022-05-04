@@ -12,59 +12,64 @@ class ClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Client
-        fields = (
+        fields = '__all__'
+        read_only_fields = (
             'id',
-            'clientname', 'password',
-            'is_active', 'is_staff', 'created_at'
+            'groups', 'user_permissions',
+            'is_active', 'is_staff', 'is_superuser',
+            'created_at', 'last_login',
         )
-        extra_kwargs = {
-            'password': {'write_only': True},
-            'is_active': {'read_only': True},
-            'created_at': {'read_only': True},
-            'is_staff': {'read_only': True},
-        }
+        extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
-        client = models.Client.objects.create(
+        client = models.Client.objects.create_user(
             clientname=validated_data.pop('clientname'),
+            password=validated_data.pop('password', None),
             **validated_data
         )
-        client.set_password(validated_data['password'])
-        client.save()
         return client
 
 
 class UserSerializer(serializers.ModelSerializer):
 
+    invited_through_referral = serializers.SlugRelatedField(
+        slug_field='code', 
+        required=False, default=None, allow_null=True,
+        queryset=models.Referral.objects.all(),
+        read_only=False
+    )
+
     client = ClientSerializer()
 
     class Meta:
         model = models.User
-        fields = (
-            'client', 'id',
-            'tg_user_id', 'email',
-            'first_name', 'last_name', 'language_code',
-            'balance', 'created_at', 'updated_at'
+        fields = '__all__'
+        read_only_fields = (
+            'updated_at',
+            'created_at',
+            'balance'
         )
-        extra_kwargs = {
-            'created_at': {'read_only': True},
-            'updated_at': {'read_only': True},
-            'is_staff': {'read_only': True},
-        }
         depth = 1
 
     def create(self, validated_data):
         client_data = validated_data.pop('client')
-
-        client = models.Client(clientname=client_data['clientname'])
-        client.set_password(client_data['password'])
-        client.save()
-        user = models.User(
+        client = models.Client.objects.create_user(
+            clientname=client_data.pop('clientname'),
+            password=client_data.pop('password', None),
+            **client_data
+        )
+        user = models.User.objects.create(
             client=client,
             **validated_data
         )
         user.save()
         return user
+    
+    def update(self, instance, validated_data):
+        print(validated_data)
+        client_data = validated_data.pop('client')
+        models.Client.objects.get(id=client_data['id']).update(**client_data)
+        return super(self, UserSerializer).update(instance, validated_data)
 
 
 class ReferralSerializer(serializers.ModelSerializer):
@@ -72,11 +77,7 @@ class ReferralSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Referral
         fields = '__all__'
-        extra_kwargs = {
-            'created_at': {'read_only': True},
-            'finish_at': {'read_only': True},
-            # 'owner': {'read_only': True}
-        }
+        read_only_fields = ('created_at', 'code')
 
     """    
     def create(self, validated_data):
@@ -91,19 +92,20 @@ class ReferralSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
 
+    peers = serializers.PrimaryKeyRelatedField(
+        many=True,
+        read_only=True
+    )
+
     class Meta:
         model = models.Order
-        fields = (
-            'id', 'user',
-            'tariff', 'is_paid',
-            'paid_at', 'finish_at',
-            'created_at'
-        )
+        fields = '__all__'
         extra_kwargs = {
             'paid_at': {'read_only': True},
             'finish_at': {'read_only': True},
             'created_at': {'read_only': True},
-            'user': {'read_only': True},
+            'is_closed': {'read_only': True},
+            'is_paid': {'read_only': True},
         }
     """
     def create(self, validated_data):
