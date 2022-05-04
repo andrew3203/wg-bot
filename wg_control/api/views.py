@@ -1,10 +1,9 @@
 from django.shortcuts import render
 from rest_framework.response import Response
-from rest_framework import status
-
-from rest_framework import viewsets
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 
@@ -25,15 +24,32 @@ class ClientViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.ModelViewSet):
 
     serializer_class = serializers.UserSerializer
-    queryset = models.User.objects.all()
     permission_classes = [p.IsOwnerOrAdminUser]
+    queryset = models.User.objects.all()
+
+    def get_queryset(self):
+        queryset = self.queryset
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            query_set = queryset
+        else:
+            query_set = queryset.filter(client__id=self.request.user.id)
+        return query_set
+
 
 
 class ReferralViewSet(viewsets.ModelViewSet):
 
     serializer_class = serializers.ReferralSerializer
-    queryset = models.Referral.objects.all()
     permission_classes = [p.IsOwnerOrAdminUser]
+    queryset = models.Referral.objects.all()
+
+    def get_queryset(self):
+        queryset = self.queryset
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            query_set = queryset
+        else:
+            query_set = queryset.filter(owner__client=self.request.user)
+        return query_set
 
     # def create(self, request, *args, **kwargs):
     #     serializer = self.get_serializer(data=request.data)
@@ -49,8 +65,18 @@ class ReferralViewSet(viewsets.ModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
 
     serializer_class = serializers.OrderSerializer
-    queryset = models.Order.objects.all()
     permission_classes = [p.IsOwnerOrAdminUser]
+    queryset = models.Order.objects.all()
+
+
+    def get_queryset(self):
+        queryset = self.queryset
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            query_set = queryset
+        else:
+            query_set = queryset.filter(user__client=self.request.user)
+
+        return query_set
 
     # def create(self, request, *args, **kwargs):
     #     serializer = self.get_serializer(data=request.data)
@@ -88,7 +114,8 @@ class ServerTrafficViewSet(viewsets.ModelViewSet):
 
     serializer_class = serializers.ServerTrafficSerializer
     queryset = models.ServerTraffic.objects.all()
-    permission_classes = [p.ReadOnly | IsAdminUser]
+    permission_classes = [IsAuthenticated | IsAdminUser]
+
 
 
 class LoginViewSet(viewsets.ViewSet):
