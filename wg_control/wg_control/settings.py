@@ -48,6 +48,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'rest_framework.authtoken',
+    #'django_inlinecss',
 
     'api.apps.ApiConfig',
 
@@ -168,3 +169,16 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_DEFAULT_QUEUE = 'default'
 
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Mail
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'kuorgizer@gmail.com'
+EMAIL_HOST_PASSWORD= 'bomsa4-nowjut-hixKyf'
+EMAIL_PORT = 587
+
+# WG API AUTH
+API_AUTH_NAME = os.environ.get('API_AUTH_NAME')
+API_AUTH_PASSWORD = os.environ.get('API_AUTH_PASSWORD')
+API_AUTH_TOKEN = os.environ.get('API_AUTH_TOKEN')

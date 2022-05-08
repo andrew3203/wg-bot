@@ -122,7 +122,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     
     def create(self, validated_data):
-        validated_data.pop('user'),
+        validated_data.pop('user')
         server = validated_data['server']
         tariff = validated_data['tariff']
         peers = models.VpnServer.get_peer_ids(server, tariff)

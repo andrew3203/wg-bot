@@ -1,5 +1,4 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
-from .models import Order, Referral, User, Client
 
 
 class IsOwnerOrAdminUser(BasePermission):
@@ -23,9 +22,6 @@ class IsOwnerOrAdminUser(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         
-        
-        print(request.method, '- - - - - - - - - - - - ')
-
 
         client = request.user
         if client and (client.is_staff or client.is_superuser):

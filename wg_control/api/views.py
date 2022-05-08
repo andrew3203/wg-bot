@@ -12,6 +12,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from . import serializers
 from . import models
 from . import permissions as p
+from . import tasks
 
 
 class ClientViewSet(viewsets.ModelViewSet):
@@ -35,6 +36,13 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
             query_set = queryset.filter(client__id=self.request.user.id)
         return query_set
+    
+    @action(methods=['GET'], detail=False, url_path='check_payment')
+    def check_payment(self, request, *args, **kwargs):
+        orders = models.Order.objects.filter(is_closed=True)
+        res = serializers.OrderSerializer(orders, many=True)
+        return Response(res.data)
+    
 
 
 class ReferralViewSet(viewsets.ModelViewSet):
@@ -94,6 +102,11 @@ class OrderViewSet(viewsets.ModelViewSet):
         orders = models.Order.objects.filter(is_paid=True, is_closed=False)
         res = serializers.OrderSerializer(orders, many=True)
         return Response(res.data)
+    
+    @action(methods=['POST'], detail=True)
+    def send_order_mail(self, request, *args, **kwargs):
+        res = tasks.send_order_mail.delay(user_id=request.user.user.id, order_id=self.get_object().id)
+        return Response({'run': 'True'})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

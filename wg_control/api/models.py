@@ -210,7 +210,6 @@ class Peer(models.Model):
     last_handshake = models.DateTimeField(blank=True, null=True)
 
     is_booked = models.BooleanField(default=False)
-    enabled = models.BooleanField(default=True)
     connected = models.BooleanField(default=False)
 
     data_time_update = models.DateTimeField(auto_now_add=True)
@@ -219,12 +218,14 @@ class Peer(models.Model):
 
     def __str__(self):
         return f'Peer: {self.id}'
+    
+    def get_file_url(self):
+        return ''
 
     def unbooke(self):
         self.last_handshake = None
 
         self.is_booked = False
-        self.enabled = False
         self.connected = False
 
         self.recived_bytes = 0
@@ -317,10 +318,28 @@ class Order(models.Model):
         for peer in Peer.objects.filter(order=self):
             ip = peer.server.ip
             conect = Conection(ip)
-            peer_json = conect.get_peer(peer.peer_id)
-            peer_json['enable'] = False
-            conect.edit_peer(peer.peer_id, data=peer_json)
+            conect.revoke_peer(PublicKey=peer.public_key)
             peer.unbooke()
+    
+    def get_peers_context(self):
+        con = Conection(self.server.ip)
+        context = {
+            'peer2': 'display: None;',
+            'peer3': 'display: None;',
+            'peer4': 'display: None;',
+            'peer5': 'display: None;',
+            'peer6': 'display: None;',
+            'peer7': 'display: None;',
+        }
+        for i, peer in enumerate(self.peers.all()):
+            i +=1
+            qrcode = con.get_peer_qrcode(PublicKey=peer.public_key)
+            qrcode_src = f"data:image/png;base64,{qrcode}"
+            conf_url = peer.get_file_url()
+            context[f'peer{i}'] = ''
+            context[f'peer{i}_conf_url'] = conf_url
+            context[f'peer{i}_qrcode_src'] = qrcode_src
+        return context
 
 
 class ServerTraffic(models.Model):

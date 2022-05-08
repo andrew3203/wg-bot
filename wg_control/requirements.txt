@@ -22,6 +22,8 @@ httptools
 redis==4.2.2
 dj-database-url
 
-python-telegram-bot==13.11
+django-inlinecss
+pyswagger
+qrcode
 
 

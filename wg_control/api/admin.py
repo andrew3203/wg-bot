@@ -101,10 +101,10 @@ class VpnServerAdmin(admin.ModelAdmin):
 class PeerAdmin(admin.ModelAdmin):
     list_display = (
         'server', 'public_key',
-        'is_booked', 'enabled', 'connected'
+        'is_booked', 'connected'
 
     )
-    list_filter = ('is_booked', 'enabled', 'connected')
+    list_filter = ('is_booked', 'connected')
     search_fields = ('server', 'public_key')
 
     readonly_fields = (
