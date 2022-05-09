@@ -57,14 +57,14 @@ services:
       - redis
       - celery
 
-  telegram:
-    build: ./tg_bot
-    container_name: telegram
-    command: python bot/dispacher.py
-    restart: on-failure
-    volumes:
-      - ./tg_bot:/code
-    env_file:
-      - .env
+  # telegram:
+  #   build: ./tg_bot
+  #   container_name: telegram
+  #   command: python bot/dispacher.py
+  #   restart: on-failure
+  #   volumes:
+  #     - ./tg_bot:/code
+  #   env_file:
+  #     - .env
   
 

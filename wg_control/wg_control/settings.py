@@ -164,6 +164,8 @@ AUTH_USER_MODEL = 'api.Client'
 # leght of suscription on days
 DAYS_PIRIOD = 31
 
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379')
+
 # Celery
 CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://redis:6379')
 CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://redis:6379')
@@ -189,4 +191,5 @@ API_AUTH_PASSWORD = os.environ.get('API_AUTH_PASSWORD')
 API_AUTH_TOKEN = os.environ.get('API_AUTH_TOKEN')
 
 # Money REWARD in rubls
-REWARD = 100
+REWARD = 50
+PEERS_AMOUNT_PER_SERVER = 120

@@ -5,10 +5,15 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 
 from django.utils import timezone
+from datetime import timedelta
+
 from django.utils.translation import gettext_lazy as _
 from .controllers import Conection
 from wg_control.celery import send_notify
 from random import randint
+from wg_control.settings import REDIS_URL, REWARD
+import redis
+
 
 
 
@@ -135,6 +140,7 @@ class Referral(models.Model):
     code = models.CharField(max_length=30, default=gen_code, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     finish_at = models.DateTimeField(blank=True, null=True)
+    reward = models.IntegerField(default=REWARD)
 
     def __str__(self) -> str:
         return f'{self.code}'
@@ -215,8 +221,8 @@ class Peer(models.Model):
     connected = models.BooleanField(default=False)
 
     data_time_update = models.DateTimeField(auto_now_add=True)
-    recived_bytes = models.BigIntegerField(default=0)
-    trancmitted_bytes = models.BigIntegerField(default=0)
+    recived_bytes = models.PositiveBigIntegerField(default=0)
+    trancmitted_bytes = models.PositiveBigIntegerField(default=0)
 
     def __str__(self):
         return f'Peer: {self.id}'
@@ -261,7 +267,7 @@ class Order(models.Model):
     peers = models.ManyToManyField(
         Peer,
         related_name='order',
-        null=True
+        blank=True
     )
 
     auto_renewal = models.BooleanField(default=False)
@@ -271,40 +277,71 @@ class Order(models.Model):
     paid_at = models.DateTimeField(blank=True, null=True)
     finish_at = models.DateTimeField(blank=True, null=True)
 
+    traffic = models.PositiveBigIntegerField(default=0)
+
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         ordering = ['-created_at']
 
+    def get_traffic_gb(self):
+        bs = self.traffic
+        return bs / 1024**3
+
     def __str__(self):
         return f'Order {self.id}: {self.tariff}'
 
-    def order_is_valid(self, user):
-        if self.is_paid and not self.is_closed:
+    def order_is_valid(self):
+        self.traffic = sum([p.get_traffic() for p in self.peers.all()])
+        self.save()
 
-            if self.finish_at > timezone.now():
+        has_avallible_traffic = (self.tariff.traffic_amount * 1024**3 > self.traffic)
+        has_avallible_time = self.finish_at > timezone.now()
+
+        if not has_avallible_traffic:
+            send_notify.delay(self.user.id, 'has_no_avallible_traffic', order_id=self.id)
+            return False
+        
+        if not has_avallible_time:
+            send_notify.delay(self.user.id, 'has_no_avallible_time', order_id=self.id)
+            return False
+
+        if self.auto_renewal:
+
+            if self.user.balance > self.tariff.price:
+                self.user.balance -= self.tariff.price
+                self.user.save()
+                send_notify.delay(self.user.id, 'order_auto_renewaled', order_id=self.id)
                 return True
 
-            elif self.auto_renewal:
-
-                if user.balance > self.tariff.price:
-                    user.balance -= self.tariff.price
-                    user.save()
-                    send_notify.delay(
-                        user.id, 'order_auto_renewaled', order_id=self.id)
-                    return True
-
-                else:
-                    send_notify.delay(
-                        user.id, 'have_no_balance_to_auto_renewale', order_id=self.id)
-                    return False
-
             else:
-                send_notify.delay(user.id, 'order_closed', order_id=self.id)
+                send_notify.delay(self.user.id, 'has_no_balance_to_auto_renewale', order_id=self.id)
                 return False
 
         else:
-            return True
+            send_notify.delay(self.user.id, 'order_closed', order_id=self.id)
+            return False
+    
+    def check_notify(self):
+        R = redis.from_url(REDIS_URL)
+        user_id = self.user.id
+
+        time_key = f'{user_id}_{self.id}_sent_traffic_notify'
+        traffic_key = f'{user_id}_{self.id}_sent_traffic_notify'
+
+        time = timedelta(days=1)
+        if self.finish_at < timezone.now() + timedelta(days=2):
+            if not bool(R.exists(name=time_key)):
+                delta_time = self.finish_at - timezone.now()
+                send_notify.delay(self.user.id, 'time_is_running_out', order_id=self.id, delta_time=delta_time)
+                R.setex(name=time_key, time=time, value=True)
+        
+        traffic_lim = self.tariff.traffic_amount * 1024**3
+        if traffic_lim < self.traffic + traffic_lim / 4:
+            if not bool(R.exists(name=traffic_key)):
+                delta_traffic = (self.traffic + traffic_lim / 4 - traffic_lim) / 1024**3
+                send_notify.delay(self.user.id, 'traffic_is_running_out', order_id=self.id, delta_traffic=delta_traffic)
+                R.setex(name=traffic_key, time=time, value=True)
 
     def close(self):
         self.is_closed = True
@@ -313,6 +350,7 @@ class Order(models.Model):
             conect = Conection(ip)
             conect.set_api()
             conect.revoke_peer(PublicKey=peer.public_key)
+            conect.add_peer()
             peer.delete()
         
         self.peers = None
@@ -352,8 +390,8 @@ class ServerTraffic(models.Model):
     )
 
     time = models.DateTimeField(auto_now_add=True, db_index=True)
-    recived_bytes = models.BigIntegerField(default=0)
-    trancmitted_bytes = models.BigIntegerField(default=0)
+    recived_bytes = models.PositiveBigIntegerField(default=0)
+    trancmitted_bytes = models.PositiveBigIntegerField(default=0)
 
     class Meta:
         ordering = ['-time']
@@ -367,3 +405,8 @@ class ServerTraffic(models.Model):
 
     def get_traffic(self):
         return self.recived_bytes + self.trancmitted_bytes
+
+
+def set_payment_listener(referral, user):
+    R = redis.from_url(REDIS_URL)
+    R.set(name=f'{user.id}_{referral.id}_need_payment', value=True)

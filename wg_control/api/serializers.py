@@ -68,8 +68,8 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         referral = user.invited_through_referral
         if referral:
-            send_notify.delay(
-                        referral.owner.id, 'user_get_from_referral', user=user.id)
+            send_notify.delay(referral.owner.id, 'user_get_from_referral', user=user.id)
+            models.set_payment_listener(referral, user)
         return user
     
     def update(self, instance, validated_data):
@@ -83,7 +83,7 @@ class ReferralSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Referral
         fields = '__all__'
-        read_only_fields = ('created_at', 'code')
+        read_only_fields = ('created_at', 'code', 'reward')
 
     """    
     def create(self, validated_data):

@@ -1,17 +1,16 @@
+from http import server
 from celery import shared_task
-from wg_control.celery import app, send_notify
 from celery import group
 from celery.utils.log import get_task_logger
-from django.core.management import call_command
-from django.utils import timezone
 
 from .models import User, VpnServer, Order, Peer
 from .controllers import Conection
 from .serializers import PeerSerializer, ServerTrafficSerializer
-from email.mime.image import MIMEImage
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from wg_control.settings import PEERS_AMOUNT_PER_SERVER
+
 
 
 logger = get_task_logger(__name__)
@@ -26,9 +25,11 @@ def hello():
 def check_user(user_id):
     logger.info(f'User {user_id} updated')
     user = User.objects.get(id=user_id)
-    for order in Order.objects.filter(user=user):
-        if not order.order_is_valid(user):
+    for order in Order.objects.filter(user=user, is_closed=False, is_paid=True):
+        if not order.order_is_valid():
             order.close()
+        else:
+            order.check_notify()
 
 
 
@@ -37,7 +38,7 @@ def check_users(user_ids=None):
     if user_ids is None:
         user_ids = User.objects.all().values_list('id', flat=True)
     tasks = [check_user.s(user_id) for user_id in user_ids]
-    results = group(tasks)()
+    group(tasks)()
     logger.info('check_users task!')
 
 
@@ -130,5 +131,22 @@ def send_order_mails(orders_ids, base_url):
     tasks = [send_order_mail.s(d[0], d[1], f'{base_url}/{d[1]}/') for d in data]
     results = group(tasks)()
     logger.info('send_order_mails task!')
+
+
+@shared_task(ignore_result=True)
+def gen_peers(vpn_server_ids):
+    if vpn_server_ids is None:
+        vpn_server_ids = VpnServer.objects.all().values_list('id', flat=True)
+    
+    for server_id in vpn_server_ids:
+        server = VpnServer.objects.get(id=server_id)
+        to_do = PEERS_AMOUNT_PER_SERVER - len(Peer.objects.filter(server=server))
+        if to_do > 0:
+            con = Conection(server.ip)
+            con.set_api()
+            for i in range(to_do):
+                con.add_peer()
+        
+    logger.info('gen_peers task!')
     
     
