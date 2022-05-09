@@ -3,7 +3,9 @@ from http import client
 from rest_framework import serializers
 from django.utils import timezone
 from datetime import timedelta
-from wg_control.settings import DAYS_PIRIOD
+from wg_control.settings import DAYS_PIRIOD, REWARD
+from wg_control.celery import send_notify
+
 
 
 from . import models
@@ -64,10 +66,13 @@ class UserSerializer(serializers.ModelSerializer):
             **validated_data
         )
         user.save()
+        referral = user.invited_through_referral
+        if referral:
+            send_notify.delay(
+                        referral.owner.id, 'user_get_from_referral', user=user.id)
         return user
     
     def update(self, instance, validated_data):
-        print(validated_data)
         client_data = validated_data.pop('client')
         models.Client.objects.get(id=client_data['id']).update(**client_data)
         return super(self, UserSerializer).update(instance, validated_data)

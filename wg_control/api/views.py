@@ -1,8 +1,10 @@
 from multiprocessing import context
 from django.shortcuts import render
 from rest_framework.response import Response
+from django.http import HttpResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.authtoken.serializers import AuthTokenSerializer
@@ -13,6 +15,7 @@ from . import serializers
 from . import models
 from . import permissions as p
 from . import tasks
+from . import controllers
 
 
 class ClientViewSet(viewsets.ModelViewSet):
@@ -97,15 +100,48 @@ class OrderViewSet(viewsets.ModelViewSet):
         res = serializers.OrderSerializer(orders, many=True)
         return Response(res.data)
 
-    @action(methods=['GET'], detail=False, url_path='current_orders')
+    @action(methods=['GET'], detail=False)
     def current_orders(self, request, *args, **kwargs):
         orders = models.Order.objects.filter(is_paid=True, is_closed=False)
         res = serializers.OrderSerializer(orders, many=True)
         return Response(res.data)
+
+
+    @action(methods=['GET'], detail=True, url_path='get_qrcode/(?P<public_key>[^/.]+)', url_name='get_qrcode')
+    def get_qrcode(self, request, pk, public_key, *args, **kwargs):
+        order = models.Order.objects.get(pk=pk)
+        public_keys = list(order.peers.all().values_list('public_key', flat=True))
+        if public_key in public_keys:
+            peer = models.Peer.objects.get(public_key=public_key)
+            con = controllers.Conection(peer.server.ip)
+            con.set_general()
+            file = con.get_peer_qrcode(PublicKey=public_key)
+            response = HttpResponse(file, content_type='application/png')
+            response['Content-Disposition'] = f'attachment; filename="tunnel.png"'
+            return response
+            
+        return Response({'result': 'wrong public_key'})
+
+    @action(methods=['GET'], detail=True, url_path='get_config_file/(?P<public_key>[^/.]+)', url_name='get_config_file')
+    def get_config_file(self, request, pk, public_key, *args, **kwargs):
+        order = models.Order.objects.get(pk=pk)
+        public_keys = list(order.peers.all().values_list('public_key', flat=True))
+        if public_key in public_keys:
+            peer = models.Peer.objects.get(public_key=public_key)
+            con = controllers.Conection(peer.server.ip)
+            con.set_general()
+            file = con.get_peer_conf_file(PublicKey=public_key)
+            response = HttpResponse(file, content_type='application/text')
+            response['Content-Disposition'] = f'attachment; filename="tunnel.conf"'
+            return response
+
+        return Response({'result': 'wrong public_key'})
     
     @action(methods=['POST'], detail=True)
     def send_order_mail(self, request, *args, **kwargs):
-        res = tasks.send_order_mail.delay(user_id=request.user.user.id, order_id=self.get_object().id)
+        order = self.get_object()
+        base_url = request.build_absolute_uri()
+        tasks.send_order_mail.delay(user_id=order.user.id, order_id=order.id, base_url=base_url)
         return Response({'run': 'True'})
 
     def create(self, request, *args, **kwargs):

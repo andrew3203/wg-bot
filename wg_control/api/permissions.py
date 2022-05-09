@@ -3,7 +3,7 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 class IsOwnerOrAdminUser(BasePermission):
 
-    def has_permission(self, request, view):  
+    def has_permission(self, request, view, *args, **kwargs):  
         client = request.user
         if client and (client.is_staff or client.is_superuser):
             return True
@@ -13,10 +13,13 @@ class IsOwnerOrAdminUser(BasePermission):
         c = str(type(view)) == "<class 'api.views.OrderViewSet'>" 
         d = str(type(view)) == "<class 'api.views.UserViewSet'>" and request.method == 'POST'
 
+        params = str(request).split('/')
+        media = 'get_config_file' in params or 'get_qrcode' in params
+
         if client and client.is_authenticated:
-            return a or b or c
+            return a or b or c or media
         else:
-            return d
+            return d or media
 
         
 

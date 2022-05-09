@@ -1,16 +1,17 @@
 import requests
 import collections
 import string
-import datetime
 import uuid
 import subprocess
 import random
 import qrcode
 from wg_control.settings import API_AUTH_NAME, API_AUTH_PASSWORD, API_AUTH_TOKEN
-
+from wg_control.settings import MEDIA_ROOT
 
 from pyswagger import App, Security
 from pyswagger.contrib.client.requests import Client
+
+import io
 
 
 class ApiError(Exception):
@@ -34,14 +35,9 @@ class WGPClient:
         self.client._Client__s.hooks['response'] = logHttp
 
     def call(self, name, **kwargs):
-        #        print(f"{name} {kwargs}")
         op = self.app.op[name]
         req, resp = op(**kwargs)
-        now = datetime.datetime.now()
         resp = self.client.request((req, resp))
-        then = datetime.datetime.now()
-        delta = then - now
-        #        print(f"{resp.status} {delta}")
 
         if 200 <= resp.status <= 299:
             pass
@@ -141,9 +137,12 @@ class Conection(object):
         }
         self.DEVICE = "wg0"
 
-        self.c_general = WGPClient(
-            self.URL, *[self.AUTH[i] for i in ["general"]])
-        self.c_api = WGPClient(self.URL, *[self.AUTH[i] for i in ["api"]])
+       
+    def set_general(self):
+         self.c_general = WGPClient(self.URL, *[self.AUTH[i] for i in ["general"]])
+    
+    def set_api(self):
+          self.c_api = WGPClient(self.URL, *[self.AUTH[i] for i in ["api"]])
 
     @property
     def andmail(self):
@@ -182,7 +181,6 @@ class Conection(object):
             "Email": self.andmail,
         }
         return self.c_api.PostPeer(DeviceName=self.DEVICE, Peer=peer)
-        return p
 
     def edit_email_peer(self, PublicKey, Email):
         peer = self.c_api.GetPeer(PublicKey=PublicKey)
@@ -195,18 +193,16 @@ class Conection(object):
 
     def get_peer_conf_file(self, PublicKey):
         conf = self.get_peer_conf(PublicKey)
-        with open(f'{PublicKey[:5]}.conf', 'w') as f:
-            f.write(conf)
-
-        with open(f'{PublicKey[:5]}.conf', 'rb') as f:
-            return f.read()
+        return bytes(conf,'utf-8')
 
     def get_peer_qrcode(self, PublicKey):
         conf = self.get_peer_conf(PublicKey)
         img = qrcode.make(conf)
-        # zip_file = open('C:\temp\core\files\CDX_COMPOSITES_20140626.zip', 'rb')
-        # response = HttpResponse(FileWrapper(zip_file), content_type='application/zip')
-        return img.tobytes()
+ 
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='PNG')
+        img_byte_arr = img_byte_arr.getvalue()
+        return img_byte_arr
 
     def get_peers(self):
         stats = self.get_stats()

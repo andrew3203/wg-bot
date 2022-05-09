@@ -6,7 +6,7 @@ from django.core.management import call_command
 from django.utils import timezone
 
 from .models import User, VpnServer, Order, Peer
-from .controllers import *
+from .controllers import Conection
 from .serializers import PeerSerializer, ServerTrafficSerializer
 from email.mime.image import MIMEImage
 
@@ -46,6 +46,7 @@ def update_vpn_server(vpn_server_id):
     s = VpnServer.objects.get(id=vpn_server_id)
     logger.info(f' - - - - {s} {s.ip} - - - - -')
     conection = Conection(s.ip)
+    conection.set_api()
     peers_list = conection.get_peers()
 
     recived_bytes = 0
@@ -93,11 +94,11 @@ def get_updates(vpn_server_ids=None):
     logger.info('get_updates task!')
 
 @shared_task(ignore_result=False)
-def send_order_mail(user_id, order_id):
+def send_order_mail(user_id, order_id, base_url):
     logger.info(f' - - - - - - user {user_id}  order_id {order_id} - - - -  - - - - -')
     order = Order.objects.get(id=order_id)
     user = User.objects.get(id=user_id)
-    context = order.get_peers_context()
+    context = order.get_peers_context(base_url)
 
     html_content = render_to_string('api/order.html', context=context)#.strip()
     msg = EmailMultiAlternatives(
@@ -117,5 +118,17 @@ def send_order_mail(user_id, order_id):
         return {'results': 'done?'}
     except Exception as e:
         return {'results': 'error', 'ditails': f"{e}"}
+
+
+@shared_task(ignore_result=True)
+def send_order_mails(orders_ids, base_url):
+    base_url = base_url[:-16] + 'api/order/'
+    data = []
+    for order_id in orders_ids:
+        o = Order.objects.get(id=order_id)
+        data.append((o.user.id, o.id))
+    tasks = [send_order_mail.s(d[0], d[1], f'{base_url}/{d[1]}/') for d in data]
+    results = group(tasks)()
+    logger.info('send_order_mails task!')
     
     

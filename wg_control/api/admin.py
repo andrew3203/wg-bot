@@ -1,6 +1,6 @@
 from django.contrib import admin
 from api import models
-from .tasks import check_users, get_updates
+from .tasks import check_users, get_updates, send_order_mails
 
 
 
@@ -53,7 +53,12 @@ class OrderAdmin(admin.ModelAdmin):
     )
     list_filter = ("is_paid", 'tariff')
     search_fields = ('user', 'tariff')
+    actions = ['send_mails']
 
+    def send_mails(self, request, queryset):
+        orders_ids = queryset.values_list('id', flat=True).distinct().iterator()
+        orders_ids = list(orders_ids)
+        send_order_mails.delay(orders_ids, request.build_absolute_uri())
 
 @admin.register(models.Tariff)
 class TariffAdmin(admin.ModelAdmin):

@@ -2937,7 +2937,7 @@ html {
   <div class="main wf-section">
     <div class="container w-container">
       <h2 class="heading">Спасибо, что воспользовались нашим сервисом!</h2>
-      <h4 class="heading-2">Ваш заказ №1111,<br>Статус заказа: оплачен<br>Вы купили <em class="italic-text">1</em><span class="text-span-2"><em class="italic-text"> Гб на месяц, с возможностью подключить </em></span><em class="italic-text">до 5 пользователей,</em></h4>
+      <h4 class="heading-2">Ваш заказ № {{ order_number }},<br>Статус заказа: оплачен<br>Вы купили <em class="italic-text">{{ order_traffic_amount }}</em><span class="text-span-2"><em class="italic-text"> Гб на месяц, с возможностью подключить </em></span><em class="italic-text">{{ order_connection_amount}},</em></h4>
       <p class="paragraph"><span class="text-span">ВНИМЕНИЕ</span>!<br>Подключение более 1 устройства к одному &quot;подключению&quot; приведет к значительному замедлению скорости подключения и последующей блокировки вашего доступа к сервису. </p>
       <h4 class="heading-2">Для того, чтобы подключить VPN на свое устройство, пожалуйста, следуйте инструкции ниже:</h4>
       <ul role="list" class="list">

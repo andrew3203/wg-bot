@@ -11,6 +11,7 @@ from wg_control.celery import send_notify
 from random import randint
 
 
+
 def gen_code():
     min_lenght, max_lenght = 10, 15
     lenght = randint(min_lenght, max_lenght)
@@ -127,6 +128,7 @@ class User(models.Model):
 class Referral(models.Model):
     owner = models.OneToOneField(
         'User',
+        related_name='referral',
         on_delete=models.SET_NULL,
         null=True,
     )
@@ -232,14 +234,6 @@ class Peer(models.Model):
         self.trancmitted_bytes = 0
         self.save()
 
-    def get_qrcode(self):
-        # TODO
-        pass
-
-    def get_config_file(self):
-        # TODO
-        pass
-
     def get_traffic(self):
         return self.recived_bytes + self.trancmitted_bytes
 
@@ -297,16 +291,16 @@ class Order(models.Model):
                     user.balance -= self.tariff.price
                     user.save()
                     send_notify.delay(
-                        user, 'order_auto_renewaled', order_id=self.id)
+                        user.id, 'order_auto_renewaled', order_id=self.id)
                     return True
 
                 else:
                     send_notify.delay(
-                        user, 'have_no_balance_to_auto_renewale', order_id=self.id)
+                        user.id, 'have_no_balance_to_auto_renewale', order_id=self.id)
                     return False
 
             else:
-                send_notify.delay(user, 'order_closed', order_id=self.id)
+                send_notify.delay(user.id, 'order_closed', order_id=self.id)
                 return False
 
         else:
@@ -314,15 +308,24 @@ class Order(models.Model):
 
     def close(self):
         self.is_closed = True
-        self.save()
         for peer in Peer.objects.filter(order=self):
             ip = peer.server.ip
             conect = Conection(ip)
+            conect.set_api()
             conect.revoke_peer(PublicKey=peer.public_key)
-            peer.unbooke()
+            peer.delete()
+        
+        self.peers = None
+        self.save()
     
-    def get_peers_context(self):
+    def get_peers_context(self, base_url):
+        print(base_url)
         con = Conection(self.server.ip)
+        con.set_general()
+        if self.tariff.connections_amount == 1:
+            text = '1 устройство'
+        else:
+            text = f'до {self.tariff.connections_amount} устройств'
         context = {
             'peer2': 'display: None;',
             'peer3': 'display: None;',
@@ -330,15 +333,15 @@ class Order(models.Model):
             'peer5': 'display: None;',
             'peer6': 'display: None;',
             'peer7': 'display: None;',
+            'order_number': f'№ {self.id}',
+            'order_traffic_amount': f'{self.tariff.traffic_amount}',
+            'order_connection_amount': text
         }
         for i, peer in enumerate(self.peers.all()):
             i +=1
-            qrcode = con.get_peer_qrcode(PublicKey=peer.public_key)
-            qrcode_src = f"data:image/png;base64,{qrcode}"
-            conf_url = peer.get_file_url()
             context[f'peer{i}'] = ''
-            context[f'peer{i}_conf_url'] = conf_url
-            context[f'peer{i}_qrcode_src'] = qrcode_src
+            context[f'peer{i}_conf_url'] = f'{base_url}get_config_file/{peer.public_key}/'
+            context[f'peer{i}_qrcode_src'] = f'{base_url}get_peer_qrcode/{peer.public_key}/'
         return context
 
 

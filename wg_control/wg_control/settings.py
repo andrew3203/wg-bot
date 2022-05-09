@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     #'django_inlinecss',
 
     'api.apps.ApiConfig',
+    'payments.apps.PaymentsConfig',
 
 ]
 
@@ -62,9 +63,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    #'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-
     'django.middleware.common.CommonMiddleware',
 ]
 
@@ -81,6 +81,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.media',
             ],
         },
     },
@@ -149,6 +150,10 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')
+
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -182,3 +187,6 @@ EMAIL_PORT = 587
 API_AUTH_NAME = os.environ.get('API_AUTH_NAME')
 API_AUTH_PASSWORD = os.environ.get('API_AUTH_PASSWORD')
 API_AUTH_TOKEN = os.environ.get('API_AUTH_TOKEN')
+
+# Money REWARD in rubls
+REWARD = 100
