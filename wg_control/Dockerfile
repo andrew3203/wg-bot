@@ -11,7 +11,8 @@ RUN apt-get update \
     && apt-get -y install libpq-dev gcc \
     && apt-get install tk -y \
     && pip install -U pip \
-    && pip install -r requirements.txt
+    && pip install -r requirements.txt \
+    && apt install wireguard -y
 
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.2/zsh-in-docker.sh)" -- \
     -p git -p ssh-agent -p 'history-substring-search' \

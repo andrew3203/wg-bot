@@ -1,4 +1,3 @@
-from turtle import back
 from django.db import models
 from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
@@ -9,7 +8,6 @@ from datetime import timedelta
 
 from django.utils.translation import gettext_lazy as _
 from .controllers import Conection
-from wg_control.celery import send_notify
 from random import randint
 from wg_control.settings import REDIS_URL, REWARD
 import redis
@@ -298,29 +296,27 @@ class Order(models.Model):
         has_avallible_traffic = (self.tariff.traffic_amount * 1024**3 > self.traffic)
         has_avallible_time = self.finish_at > timezone.now()
 
-        if not has_avallible_traffic:
-            send_notify.delay(self.user.id, 'has_no_avallible_traffic', order_id=self.id)
-            return False
-        
-        if not has_avallible_time:
-            send_notify.delay(self.user.id, 'has_no_avallible_time', order_id=self.id)
-            return False
+        if has_avallible_traffic or has_avallible_time:
+            return True, {}
 
-        if self.auto_renewal:
+        elif not has_avallible_traffic and not self.auto_renewal:
+            return False, {'user_id': self.user.id, 'keyword': 'has_no_avallible_traffic', 'order_id': self.id}
+        
+        elif not has_avallible_time and not self.auto_renewal:
+            return False, {'user_id': self.user.id, 'keyword': 'has_no_avallible_time', 'order_id': self.id}
+
+        elif self.auto_renewal and (not has_avallible_traffic or not has_avallible_time):
 
             if self.user.balance > self.tariff.price:
                 self.user.balance -= self.tariff.price
                 self.user.save()
-                send_notify.delay(self.user.id, 'order_auto_renewaled', order_id=self.id)
-                return True
+                return True, {'user_id': self.user.id, 'keyword': 'order_auto_renewaled', 'order_id': self.id}
 
             else:
-                send_notify.delay(self.user.id, 'has_no_balance_to_auto_renewale', order_id=self.id)
-                return False
+                return False, {'user_id': self.user.id, 'keyword': 'has_no_balance_to_auto_renewale', 'order_id': self.id}
 
         else:
-            send_notify.delay(self.user.id, 'order_closed', order_id=self.id)
-            return False
+            return False, {'user_id': self.user.id, 'keyword': 'order_closed', 'order_id': self.id}
     
     def check_notify(self):
         R = redis.from_url(REDIS_URL)
@@ -329,22 +325,27 @@ class Order(models.Model):
         time_key = f'{user_id}_{self.id}_sent_traffic_notify'
         traffic_key = f'{user_id}_{self.id}_sent_traffic_notify'
 
-        time = timedelta(days=1)
+        dtime = timedelta(days=1)
         if self.finish_at < timezone.now() + timedelta(days=2):
-            if not bool(R.exists(name=time_key)):
-                delta_time = self.finish_at - timezone.now()
-                send_notify.delay(self.user.id, 'time_is_running_out', order_id=self.id, delta_time=delta_time)
-                R.setex(name=time_key, time=time, value=True)
+            if not bool(R.exists(time_key)):
+                delta_time = convert_to_str(self.finish_at - timezone.now())
+                R.setex(name=time_key, time=dtime, value='1')
+                return {'user_id': self.user.id, 'keyword': 'time_is_running_out', 'order_id': self.id, 'delta_time': delta_time}
         
         traffic_lim = self.tariff.traffic_amount * 1024**3
         if traffic_lim < self.traffic + traffic_lim / 4:
-            if not bool(R.exists(name=traffic_key)):
+            if not bool(R.exists(traffic_key)):
                 delta_traffic = (self.traffic + traffic_lim / 4 - traffic_lim) / 1024**3
-                send_notify.delay(self.user.id, 'traffic_is_running_out', order_id=self.id, delta_traffic=delta_traffic)
-                R.setex(name=traffic_key, time=time, value=True)
+                R.setex(name=traffic_key, time=dtime, value='1')
+                return {'user_id': self.user.id, 'keyword': 'traffic_is_running_out', 'order_id': self.id, 'delta_traffic': delta_traffic}
+        
+        return None
+
 
     def close(self):
         self.is_closed = True
+        self.save()
+
         for peer in Peer.objects.filter(order=self):
             ip = peer.server.ip
             conect = Conection(ip)
@@ -353,8 +354,6 @@ class Order(models.Model):
             conect.add_peer()
             peer.delete()
         
-        self.peers = None
-        self.save()
     
     def get_peers_context(self, base_url):
         print(base_url)
@@ -409,4 +408,21 @@ class ServerTraffic(models.Model):
 
 def set_payment_listener(referral, user):
     R = redis.from_url(REDIS_URL)
-    R.set(name=f'{user.id}_{referral.id}_need_payment', value=True)
+    R.set(name=f'{user.id}_{referral.id}_need_payment', value='1')
+
+def convert_to_str(delta_time):
+    days, hours, minutes = delta_time.days, delta_time.seconds//3600, (delta_time.seconds//60)%60
+    if days == 0:
+        td = 'дней'
+    elif days == 1:
+        td = 'день'
+    else:
+            td = 'дня'
+        
+    if hours == 0:
+        th = 'часов'
+    elif days == 1:
+        th = 'час'
+    else:
+        th = 'часов'
+    return f'{days} {td}, {hours} {th}, {minutes}'

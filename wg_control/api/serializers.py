@@ -1,13 +1,11 @@
-from asyncore import read
 from http import client
 from rest_framework import serializers
 from django.utils import timezone
 from datetime import timedelta
 from wg_control.settings import DAYS_PIRIOD, REWARD
-from wg_control.celery import send_notify
 
 
-
+from . import tasks
 from . import models
 
 
@@ -68,7 +66,7 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         referral = user.invited_through_referral
         if referral:
-            send_notify.delay(referral.owner.id, 'user_get_from_referral', user=user.id)
+            tasks.send_notify.delay(referral.owner.id, 'user_get_from_referral', user=user.id)
             models.set_payment_listener(referral, user)
         return user
     

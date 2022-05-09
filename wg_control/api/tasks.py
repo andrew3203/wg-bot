@@ -1,4 +1,3 @@
-from http import server
 from celery import shared_task
 from celery import group
 from celery.utils.log import get_task_logger
@@ -10,6 +9,8 @@ from .serializers import PeerSerializer, ServerTrafficSerializer
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from wg_control.settings import PEERS_AMOUNT_PER_SERVER
+
+import requests
 
 
 
@@ -26,10 +27,15 @@ def check_user(user_id):
     logger.info(f'User {user_id} updated')
     user = User.objects.get(id=user_id)
     for order in Order.objects.filter(user=user, is_closed=False, is_paid=True):
-        if not order.order_is_valid():
+        is_vaild, data = order.order_is_valid()
+        if not is_vaild:
             order.close()
+            send_notify.delay(**data)
+
         else:
-            order.check_notify()
+            data = order.check_notify()
+            if data: send_notify.delay(**data)
+
 
 
 
@@ -150,3 +156,63 @@ def gen_peers(vpn_server_ids):
     logger.info('gen_peers task!')
     
     
+@shared_task(ignore_result=True)
+def send_notify(user_id, keyword, **kwagrs):
+    logger.info(f'- - - - - - - User: {user_id} notified! {keyword}, {kwagrs} - - - - - - - ')
+    _texts = {
+        'has_no_avallible_traffic': 'К сожалению, Вы израсходовали весь доступный трафик ({0:.2f}ГБ) заказа № {1}.\n\nДоступ к системе приостановлен, но вы можете повторить заказ в разделе "Мои Заказы"',
+        'has_no_avallible_time': 'Срок заказа № {0}\n истек. Вы израсходовали {1:.2f} из {2:.2f}ГБ.\nДоступ к системе приостановлен, но вы можете повторить заказ в разделе "Мои Заказы"',
+        'order_auto_renewaled': 'Ваш заказ  № {0}\n истек, но мы автоматически продлили его!\n\nВы можете продолжать пользоваться услугами нашего сервиса!\n\nВыш текущий баланс: {1:.2f} ₽',
+        'has_no_balance_to_auto_renewale': 'Ваш заказ  № {0}\n истек, к сожалению мы не смогли автоматически продлить его, из-за того, что на вашем счету недостадачто средств(\n\nВыш текущий баланс: {1:.2f} ₽',
+        'order_closed': 'Срок заказа № {0}\n истек. Доступ к системе приостановлен, но вы можете повторить заказ в разделе "Мои Заказы"!',
+        'user_get_from_referral': 'Ура!\nКто-то воспользовался Вашей реферальной ссылкой!\n\n Как только пользователь пополнит свой баланс на {0} ₽ в нашем сервисе, мы зачислем вам на баланс {1} ₽!',
+        'time_is_running_out': 'Внимание!\n\nУважаемый {0}, срок вашего заказа № {1} подходит к концу. Заказ будет активен еще {2}, после этого доступ к системе будет приостановлен.\n\nПровертье, что на вашем балансе достаточно средств для автопродления заказа!\n\nЕсли вы не хотите, чтобы этот заказ обнавлялся автоматически, вы можете изменить это в настройках этого заказа, через меню "Мои Заказы"',
+        'traffic_is_running_out': 'Внимание!\n\nУважаемый {0}, доступный траффик вашего заказа № {1} подходит к концу. У вас осталось еще {2} ГБ, после этого доступ к системе будет приостановлен.\n\nПровертье, что на вашем балансе достаточно средств для автопродления заказа!\n\nЕсли вы не хотите, чтобы этот заказ обнавлялся автоматически, вы можете изменить это в настройках этого заказа, через меню "Мои Заказы"',
+        'user_from_referral_add_balance': 'Ура!\nПриглашенный вами пользователь пополнил свой баланс!\n\nКак и обещали, пополняем ваш баланс на {0}₽\n\nТеперь у Вас на счету {1} ₽!\n\nСпасибо, что используете наш сервис!',
+
+    }
+    user = User.objects.get(id=user_id)
+    text = ''
+    if keyword == 'has_no_avallible_traffic':
+        # send_notify.delay(user.id, 'has_no_avallible_traffic', order_id=self.id)
+        order = Order.objects.get(id=kwagrs['order_id'])
+        text = _texts['has_no_avallible_traffic'].format(order.get_traffic_gb(), order.id)
+    
+    if keyword == 'has_no_avallible_time':
+        # send_notify.delay(user.id, 'has_no_avallible_time', order_id=self.id)
+        order = Order.objects.get(id=kwagrs['order_id'])
+        text = _texts['has_no_avallible_time'].format(order.id, order.get_traffic_gb(), order.tariff.traffic_amount)
+    
+    if keyword == 'order_auto_renewaled':
+        # send_notify.delay(user.id, 'order_auto_renewaled', order_id=self.id)
+        text = _texts['order_auto_renewaled'].format(kwagrs['order_id'], user.balance)
+    
+    if keyword == 'has_no_balance_to_auto_renewale':
+        # send_notify.delay(user.id, 'has_no_balance_to_auto_renewale', order_id=self.id)
+        text = _texts['has_no_balance_to_auto_renewale'].format(kwagrs['order_id'], user.balance)
+    
+    if keyword == 'order_closed':
+        # send_notify.delay(user.id, 'order_closed', order_id=self.id)
+        text = _texts['order_closed'].format(kwagrs['order_id'])
+    
+    if keyword == 'user_get_from_referral':
+        text = _texts['user_get_from_referral'].format(100, 50)  # на сколько пополнит, сколько вернеться
+    
+    if keyword == 'time_is_running_out':
+        # send_notify.delay(self.user.id, 'time_is_running_out', order_id=self.id, delta_time=delta_time)
+        delta_time = kwagrs['delta_time']
+        text = _texts['time_is_running_out'].format(user.client.clientname, kwagrs['order_id'], delta_time)
+    
+    if keyword == 'traffic_is_running_out':
+        # send_notify.delay(self.user.id, 'traffic_is_running_out', order_id=self.id, delta_traffic=delta_traffic)
+        text = _texts['traffic_is_running_out'].format(user.client.clientname, kwagrs['order_id'], kwagrs['delta_traffic'])
+
+    if keyword == 'user_from_referral_add_balance':
+        text = _texts['user_from_referral_add_balance'].format(50, user.balance)
+
+    data = {'text': text}
+    print(text)
+    try:
+        res = requests.post(user.client.server, data=data)
+    except Exception as e:
+        print(e)

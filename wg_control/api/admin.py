@@ -1,6 +1,6 @@
 from django.contrib import admin
 from api import models
-from .tasks import check_users, get_updates, send_order_mails
+from .tasks import check_users, get_updates, send_order_mails, gen_peers
 
 
 
@@ -23,9 +23,9 @@ class UserAdmin(admin.ModelAdmin):
     )
     search_fields = ('client', 'user_id')
 
-    actions = ['check_users_cmd']
+    actions = ['check_users_orders']
 
-    def check_users_cmd(self, request, queryset):
+    def check_users_orders(self, request, queryset):
         user_ids = queryset.values_list('id', flat=True).distinct().iterator()
         user_ids = list(user_ids)
         check_users.delay(user_ids=user_ids)
@@ -81,12 +81,17 @@ class VpnServerAdmin(admin.ModelAdmin):
         'peers_amount',
         'all_traffic',
     )
-    actions = ['get_updates_cmd']
+    actions = ['updates_servers', 'gen_new_peers']
 
-    def get_updates_cmd(self, request, queryset):
+    def updates_servers(self, request, queryset):
         vpn_server_ids = queryset.values_list('id', flat=True).distinct().iterator()
         vpn_server_ids = list(vpn_server_ids)
         get_updates.delay(vpn_server_ids=vpn_server_ids)
+    
+    def gen_new_peers(self, request, queryset):
+        vpn_server_ids = queryset.values_list('id', flat=True).distinct().iterator()
+        vpn_server_ids = list(vpn_server_ids)
+        gen_peers.delay(vpn_server_ids=vpn_server_ids)
                       
 
     @admin.display(description='Available peers amount')

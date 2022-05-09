@@ -20,7 +20,7 @@ def get_state(key) -> str:
 
 
 def is_state_exsists(key) -> bool:
-    return bool(R.exists(name=key))
+    return bool(R.exists(key))
 
 
 def pop_state(key) -> int:
