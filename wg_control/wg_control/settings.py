@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     #'django_inlinecss',
 
+    'cite.apps.CiteConfig',
     'api.apps.ApiConfig',
     'payments.apps.PaymentsConfig',
 
