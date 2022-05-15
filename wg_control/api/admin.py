@@ -3,6 +3,10 @@ from api import models
 from .tasks import check_users, get_updates, send_order_mails, gen_peers
 
 
+admin.site.site_header = 'Bridge VPN Administration'                    # default: "Django Administration"
+admin.site.index_title = 'Bridge VPN Administration'                 # default: "Site administration"
+admin.site.site_title = 'Admin' # default: "Django site admin"
+
 
 @admin.register(models.Client)
 class ClientAdmin(admin.ModelAdmin):
@@ -63,10 +67,12 @@ class OrderAdmin(admin.ModelAdmin):
 @admin.register(models.Tariff)
 class TariffAdmin(admin.ModelAdmin):
     list_display = (
+        'tittle', 
         'price', 'traffic_amount',
         'connections_amount',
     )
     search_fields = ('price',)
+    list_filter = ("is_public",)
 
 
 @admin.register(models.VpnServer)

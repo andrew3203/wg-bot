@@ -15,12 +15,12 @@ import redis
 
 
 
-def gen_code():
+def gen_code(pref='pro_'):
     min_lenght, max_lenght = 10, 15
     lenght = randint(min_lenght, max_lenght)
     base = 'abcdefghijklomopqrstuvwsynzABCDEFGHIJKLOMOPQRSTUVWSYNZ'
     N = len(base)
-    return 'pro_'+''.join([base[randint(0, N-1)] for i in range(lenght)])
+    return pref + ''.join([base[randint(0, N-1)] for i in range(lenght)])
 
 
 class UserProfileManager(BaseUserManager):
@@ -158,15 +158,18 @@ class Referral(models.Model):
 
 
 class Tariff(models.Model):
+    tittle = models.CharField(max_length=100, default='Tariff')
     price = models.IntegerField()
-    traffic_amount = models.IntegerField()
-    connections_amount = models.IntegerField(default=0)
+    traffic_amount = models.FloatField()
+    connections_amount = models.IntegerField()
+
+    is_public = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['price']
 
     def __str__(self):
-        return f'Tariff: t{self.traffic_amount}GB, p{self.price}, c{self.connections_amount}'
+        return f'{self.tittle}'
 
 
 class VpnServer(models.Model):
@@ -205,7 +208,6 @@ class VpnServer(models.Model):
     def get_peer_ids(server, tariff):
         peers = Peer.objects.filter(server=server, is_booked=False).values_list('id', flat=True)
         return peers[:tariff.connections_amount]
-
 
 
 class Peer(models.Model):

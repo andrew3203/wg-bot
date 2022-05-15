@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  {% load static %}
+  <link href="{% static 'cite/css/normalize.css' %}" rel="stylesheet" type="text/css">
+  <link href="{% static 'cite/css/webflow.css' %}" rel="stylesheet" type="text/css">
+  <link href="{% static 'cite/css/style.css' %}" rel="stylesheet" type="text/css">
+  <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" type="text/javascript"></script>
+  <script type="text/javascript">WebFont.load({  google: {    families: ["Open Sans:300,300italic,400,400italic,600,600italic,700,700italic,800,800italic","PT Mono:regular:cyrillic,cyrillic-ext,latin,latin-ext"]  }});</script>
+</head>
+<body class="body mail">
+  <div class="main wf-section">
+    <div class="container w-container">
+      <h2 class="heading">Спасибо, что воспользовались нашим сервисом!</h2>
+      <h4 class="heading-2">Ваш заказ №1111,<br>Статус заказа: оплачен<br>Вы купили <em class="italic-text">1</em><span class="text-span-2"><em class="italic-text"> Гб на месяц, с возможностью подключить </em></span><em class="italic-text">до 5 пользователей,</em></h4>
+      <p class="paragraph"><span class="text-span">ВНИМЕНИЕ</span>!<br>Подключение более 1 устройства к одному &quot;подключению&quot; приведет к значительному замедлению скорости подключения и последующей блокировки вашего доступа к сервису. </p>
+      <h4 class="heading-2">Для того, чтобы подключить VPN на свое устройство, пожалуйста, следуйте инструкции ниже:</h4>
+      <ul role="list" class="list">
+        <li class="li-item"><strong>Скачайте</strong> на ваше устройство прогрумму по ссылке: <a href="https://www.wireguard.com/install/" target="_blank" class="link-2">https://www.wireguard.com/install/</a>
+        </li>
+        <li class="li-item">Откройте программу и <strong>нажмите &quot;+&quot;, затем &quot;добавить туннель&quot;</strong></li>
+        <li class="li-item"><strong>Если вы используете телефон</strong>, или планшет, то для подключения туннеля <strong>отсканируйте qr-code ниже</strong>. Название можете выбрать любое</li>
+        <li class="li-item"><strong>Если вы используете компьютер</strong>, то для подключения туннеля <strong>скачайте файл по кнопке ниже</strong>. А затем, в левом нижнем углу нажмите &quot;+&quot;, в выпавшем меню в<strong>ыберите &quot;добавить туннель из файла&quot;.</strong> Название можете выбрать любое</li>
+      </ul>
+      <div class="peer-wrapper">
+        <div id="w-node-_40373df5-4bfe-a8a1-ee94-9828cd9b7fd5-598ca48c" class="peer">
+          <div class="div-block">
+            <h3 id="w-node-_0da4645f-3ddd-eb99-9d77-96e8884fcd76-598ca48c" class="heading-2 h2">Отсканируйте QR-код или скачайте файл</h3>
+            <a id="w-node-_01b1de9d-0859-36df-abed-f0d1088fd149-598ca48c" href="{{peer1_conf_url}}" class="button w-button">Скачать файл для подключения</a>
+          </div><img src="{{peer1_qrcode_src}}" id="w-node-_2a643bf3-f200-5c79-a2ef-30756652ef2a-598ca48c" alt="" class="image">
+          <div class="text-block">Устройство <span>1</span></div>
+        </div>
+        <div id="w-node-_49a6e2bb-31f8-4bed-5804-0c6513b39578-598ca48c" class="peer peer2" style="{{ peer2 }}">
+          <div class="div-block">
+            <h3 id="w-node-_49a6e2bb-31f8-4bed-5804-0c6513b3957a-598ca48c" class="heading-2 h2">Отсканируйте QR-код или скачайте файл</h3>
+            <a id="w-node-_49a6e2bb-31f8-4bed-5804-0c6513b3957c-598ca48c" href="{{peer2_conf_url}}" class="button w-button">Скачать файл для подключения</a>
+          </div><img src="i{{peer2_qrcode_src}}" id="w-node-_49a6e2bb-31f8-4bed-5804-0c6513b3957e-598ca48c" alt="" class="image">
+          <div class="text-block">Устройство 2</div>
+        </div>
+        <div id="w-node-_8f70c4fd-95f5-338e-aeaf-b4e75e63cf25-598ca48c" class="peer peer3" style="{{ peer3 }}">
+          <div class="div-block">
+            <h3 id="w-node-_8f70c4fd-95f5-338e-aeaf-b4e75e63cf27-598ca48c" class="heading-2 h2">Отсканируйте QR-код или скачайте файл</h3>
+            <a id="w-node-_8f70c4fd-95f5-338e-aeaf-b4e75e63cf29-598ca48c" href="{{peer3_conf_url}}" class="button w-button">Скачать файл для подключения</a>
+          </div><img src="{{peer3_qrcode_src}}" id="w-node-_8f70c4fd-95f5-338e-aeaf-b4e75e63cf2b-598ca48c" alt="" class="image">
+          <div class="text-block">Устройство 3</div>
+        </div>
+        <div id="w-node-_83352f89-584c-7247-ffed-315eef50a788-598ca48c" class="peer peer4" style="{{ peer4 }}">
+          <div class="div-block">
+            <h3 id="w-node-_83352f89-584c-7247-ffed-315eef50a78a-598ca48c" class="heading-2 h2">Отсканируйте QR-код или скачайте файл</h3>
+            <a id="w-node-_83352f89-584c-7247-ffed-315eef50a78c-598ca48c" href="{{peer4_conf_url}}" class="button w-button">Скачать файл для подключения</a>
+          </div><img src="{{peer4_qrcode_src}}" id="w-node-_83352f89-584c-7247-ffed-315eef50a78e-598ca48c" alt="" class="image">
+          <div class="text-block">Устройство 4</div>
+        </div>
+        <div id="w-node-_9cb7818a-05b6-fd1c-45a9-b1786b04dcac-598ca48c" class="peer peer5" style="{{ peer5 }}">
+          <div class="div-block">
+            <h3 id="w-node-_9cb7818a-05b6-fd1c-45a9-b1786b04dcae-598ca48c" class="heading-2 h2">Отсканируйте QR-код или скачайте файл</h3>
+            <a id="w-node-_9cb7818a-05b6-fd1c-45a9-b1786b04dcb0-598ca48c" href="{{peer5_conf_url}}" class="button w-button">Скачать файл для подключения</a>
+          </div><img src="{{peer5_qrcode_src}}" id="w-node-_9cb7818a-05b6-fd1c-45a9-b1786b04dcb2-598ca48c" alt="" class="image">
+          <div class="text-block">Устройство 5</div>
+        </div>
+        <div id="w-node-_969778c6-6516-a89b-8605-4f837888e162-598ca48c" class="peer peer6" style="{{ peer6 }}">
+          <div class="div-block">
+            <h3 id="w-node-_969778c6-6516-a89b-8605-4f837888e164-598ca48c" class="heading-2 h2">Отсканируйте QR-код или скачайте файл</h3>
+            <a id="w-node-_969778c6-6516-a89b-8605-4f837888e166-598ca48c" href="{{peer6_conf_url}}" class="button w-button">Скачать файл для подключения</a>
+          </div><img src="{{peer6_qrcode_src}}" id="w-node-_969778c6-6516-a89b-8605-4f837888e168-598ca48c" alt="" class="image">
+          <div class="text-block">Устройство 6</div>
+        </div>
+        <div id="w-node-_4d4cacd2-b98f-e4cd-df71-41d54084406a-598ca48c" class="peer peer7" style="{{ peer7 }}">
+          <div class="div-block">
+            <h3 id="w-node-_4d4cacd2-b98f-e4cd-df71-41d54084406c-598ca48c" class="heading-2 h2">Отсканируйте QR-код или скачайте файл</h3>
+            <a id="w-node-_4d4cacd2-b98f-e4cd-df71-41d54084406e-598ca48c" href="{{peer7_conf_url}}" class="button w-button">Скачать файл для подключения</a>
+          </div><img src="{{peer7_qrcode_src}}" id="w-node-_4d4cacd2-b98f-e4cd-df71-41d540844070-598ca48c" alt="" class="image">
+          <div class="text-block">Устройство 7</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
