@@ -52,9 +52,9 @@
           <a href="#benefits" data-w-id="28f8dc0e-bbc9-e209-0b6c-dee1a68fe14f" style="-webkit-transform:translate3d(20vw, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(20vw, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(20vw, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(20vw, 0, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);opacity:0" class="outter-button w-button">Подробнее</a>
           <div class="hidden-help-data">
             <div class="order_id">{{ test.id }}</div>
-            <div class="peers_amount">{{ test.connections_amount }}ГБ</div>
-            <div class="gb_amount">{{ test.traffic_amount }}</div>
-            <div class="money_amount">{{ test.price }₽}</div>
+            <div class="peers_amount">{{ test.connections_amount }}</div>
+            <div class="gb_amount">{{ test.traffic_amount }}ГБ</div>
+            <div class="money_amount">{{ test.price }}₽</div>
             <div class="card-tittle hidden"><strong class="tittle">#Тариф: {{ test.tittle }}</strong></div>
           </div>
         </div>
@@ -448,35 +448,35 @@
       <div class="tradingview-widget-container">
         <div class="tradingview-widget-container__widget"></div>
         <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async="">
-  {
-  "symbols": [
-    {
-      "proName": "FOREXCOM:SPXUSD",
-      "title": "S&P 500"
-    },
-    {
-      "proName": "FOREXCOM:NSXUSD",
-      "title": "US 100"
-    },
-    {
-      "proName": "FX_IDC:EURUSD",
-      "title": "EUR/USD"
-    },
-    {
-      "proName": "BITSTAMP:BTCUSD",
-      "title": "Биткоин"
-    },
-    {
-      "proName": "BITSTAMP:ETHUSD",
-      "title": "Эфириум"
-    }
-  ],
-  "showSymbolLogo": false,
-  "colorTheme": "dark",
-  "isTransparent": true,
-  "displayMode": "adaptive",
-  "locale": "ru"
-}
+          {
+          "symbols": [
+            {
+              "proName": "FOREXCOM:SPXUSD",
+              "title": "S&P 500"
+            },
+            {
+              "proName": "FOREXCOM:NSXUSD",
+              "title": "US 100"
+            },
+            {
+              "proName": "FX_IDC:EURUSD",
+              "title": "EUR/USD"
+            },
+            {
+              "proName": "BITSTAMP:BTCUSD",
+              "title": "Биткоин"
+            },
+            {
+              "proName": "BITSTAMP:ETHUSD",
+              "title": "Эфириум"
+            }
+          ],
+          "showSymbolLogo": false,
+          "colorTheme": "dark",
+          "isTransparent": true,
+          "displayMode": "adaptive",
+          "locale": "ru"
+        }
         </script>
       </div>
       <!--  TradingView Widget END  -->
@@ -518,13 +518,22 @@
           <h1 class="heading-6">Оформление заказа</h1>
           <p class="paragraph-3 p-top">Пожайлуста, введите свои персональные данные, чтобы мы могли сформировать заказ</p>
           <div class="form-block-2 w-form">
-            <form id="wf-form-GetOrderForm" name="wf-form-GetOrderForm" data-name="GetOrderForm" method="post" class="form-4">
-              <div id="w-node-_694389bf-cfce-ab0a-eab8-479e23bfcc57-93faf9c8"><label for="Name-5">Ваше Имя</label><input type="text" class="input modal-input w-input" maxlength="256" name="Name" data-name="Name" placeholder="Андрей" id="Name-5" required=""><input type="text" class="input hidden-input w-input" maxlength="256" name="order_id" data-name="order_id" placeholder="Андрей" id="order_id"></div>
-              <div id="w-node-_35fcf92f-acba-c70e-c1d1-8f4ca07ba021-93faf9c8"><label for="Email-5">Ваш Email</label><input type="email" class="input modal-input w-input" maxlength="256" name="Email" data-name="Email" placeholder="example@gmail.com" id="Email-5" required=""></div><input type="submit" value="Продолжить в Telegram*" data-wait="Please wait..." id="on_tg" class="button modal-buttton w-node-_99f58e82-10ba-2124-2925-b944bf8bd556-93faf9c8 w-button"><input type="submit" value="Продолжить в Telegram*" data-wait="Please wait..." id="w-node-_8485118f-9d85-6016-6905-654c48d162f5-93faf9c8" class="button modal-buttton den-modal-btn w-button">
+            <form id="wf-form-GetOrderForm" name="wf-form-GetOrderForm" data-name="GetOrderForm" method="post" action="{{ order_save_url }}" class="form-4">
+              {% csrf_token %}
+              <div id="w-node-_694389bf-cfce-ab0a-eab8-479e23bfcc57-93faf9c8"><label for="Name-5">Ваше Имя</label>
+                <input type="text" class="input modal-input w-input" maxlength="256" name="Name" data-name="Name" placeholder="Андрей" id="Name-5" required="">
+                <input type="text" class="input hidden-input w-input" maxlength="256" name="order_id" data-name="order_id" placeholder="Андрей" id="order_id">
+              </div>
+              <div id="w-node-_35fcf92f-acba-c70e-c1d1-8f4ca07ba021-93faf9c8">
+                <label for="Email-5">Ваш Email</label>
+                <input type="email" class="input modal-input w-input" maxlength="256" name="Email" data-name="Email" placeholder="example@gmail.com" id="Email-5" required="">
+              </div><input type="submit" value="Продолжить в Telegram*" data-wait="Please wait..." id="on_tg" class="button modal-buttton w-node-_99f58e82-10ba-2124-2925-b944bf8bd556-93faf9c8 w-button"><input type="submit" value="Продолжить в Telegram*" data-wait="Please wait..." id="w-node-_8485118f-9d85-6016-6905-654c48d162f5-93faf9c8" class="button modal-buttton den-modal-btn w-button">
               <div id="w-node-a5e2ba12-b52a-ac61-09bc-7fc2dcee1e3b-93faf9c8" class="div-block-6">
                 <h4 id="w-node-bb3d3bc4-8c8d-7634-9312-de45d30e62ec-93faf9c8" class="heading-7">Вы заказываете:</h4>
                 <div id="w-node-_4c133ae6-13d7-d475-d34b-6ff3a5fc6dc2-93faf9c8" class="div-block-7">
-                  <div class="card-tittle modal-info res_card_tittle"><strong id="res_card_tittle" class="tittle">#Тариф: Light 1</strong></div>
+                  <div class="card-tittle modal-info res_card_tittle">
+                    <strong id="res_card_tittle" class="tittle">#Тариф: Light 1</strong>
+                  </div>
                   <div class="tariff-info modal-info">
                     <div class="block m-person">
                       <div id="res_peers_amount" class="span m-span">1</div><img loading="lazy" src="{% static 'cite/images/person-svgrepo-com.svg' %}" alt="" class="image-5 m-image-2">
@@ -555,15 +564,66 @@
       </div>
     </div>
   </div>
-  <script src="https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=627500fa686f7925e98ca48b" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
-  <script src="{% static 'cite/js/webflow.js' %}" type="text/javascript"></script>
-  <!-- [if lte IE 9]><script src="https://cdnjs.cloudflare.com/ajax/libs/placeholders/3.0.2/placeholders.min.js"></script><![endif] -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="{% static 'cite/js/webflow.js' %}" type="text/javascript"></script>
   <script type="text/javascript">
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function getFormData($form){
+        var unindexed_array = $form.serializeArray();
+        var indexed_array = {};
+
+        $.map(unindexed_array, function(n, i){
+            indexed_array[n['name']] = n['value'];
+        });
+
+        return indexed_array;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
     $(function() {
+          $("#wf-form-GetOrderForm").submit(function(e) {
+            e.preventDefault(); 
+
+            var form = $(this);
+            var actionUrl = form.attr('action');
+            console.log(getFormData(form))
+
+            $.ajax({
+                type: "POST",
+                url: actionUrl,
+                headers : { 'X-CSRFToken' : csrftoken },
+                data: getFormData(form), // serializes the form's elements.
+                success: function(data){
+                  $('#wf-form-GetOrderForm').hide();
+                  $('.error-message-3').hide();
+                  $('.success-message-3').show();
+                },
+                error: function(data){
+                  $('.error-message-3').show();
+                }
+            });
+
+        });
+
         $('input[id="on_site"]').click(function(){
-              $(this).attr('disabled', 'disabled');
-          });
+            $(this).attr('disabled', 'disabled');
+        });
 
         $(".choose_btn").click( function() {
             let order_id = $(this).parent().find( ".order_id" ).text();

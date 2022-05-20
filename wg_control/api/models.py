@@ -170,6 +170,13 @@ class Tariff(models.Model):
 
     def __str__(self):
         return f'{self.tittle}'
+    
+    @property
+    def get_traffic_text(self):
+        if self.connections_amount == 1:
+            return '1 устройство;'
+        else:
+            return f'до {self.connections_amount} устройств;'
 
 
 class VpnServer(models.Model):
