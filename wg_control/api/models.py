@@ -146,7 +146,12 @@ class Referral(models.Model):
         return f'{self.code}'
 
     def get_link(self):
-        pass
+        return f'https://t.me/bridgevpn_bot?start={self.code}'
+    
+    def set_code(self, pref):
+        self.code = gen_code(pref=pref)
+        self.save()
+        return self.code
 
     def is_active(self):
         return self.finish_at > timezone.now()

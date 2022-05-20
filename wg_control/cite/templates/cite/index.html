@@ -433,7 +433,7 @@
         <h4>Нет назойливой рекламе!</h4>
         <p>Благодаря нашему VPN вы сможете наслаждаться любимым контентом без просмотра рекламы. Наша технология устроена таким образом, что отсекает значительную часть рекламы, которую Вы можете встретить на сайтах.</p>
         <h4>Прост в использовании</h4>
-        <p>С помощью калькулятора тарифов вы можете подобрать тариф подходящий именно вам! А чтобы удобнее было управлять вашими покупки, мы написали <a href="https://t.me/bridgevpn_bot">Telegram-бота</a>, в котором вы сможете быстро управлять вашими VPN-подключениями.</p>
+        <p>С помощью калькулятора тарифов вы можете подобрать тариф подходящий именно вам! А чтобы удобнее было управлять вашими покупки, мы написали <a href="{{ tg_bot_url }}">Telegram-бота</a>, в котором вы сможете быстро управлять вашими VPN-подключениями.</p>
         <h4>Есть пробный период</h4>
         <p>Если вы все еще сомневаетесь в выборе нашего сервиса, вы можете воспользоваться пробным vpn - это абсолютно бесплатно. Нажмите на &quot;попробовать бесплатную версию сервиса&quot; и следуйте дальнейшим инструкциям.</p>
         <h4><strong>Остались вопросы? Пишите нам в поддержку: </strong>
@@ -554,6 +554,11 @@
             </form>
             <div class="success-message-3 w-form-done">
               <div class="text-block-12">Спасибо! <br>Ваша заявка принята!</div>
+              <p class="text-block-12">Если у вас не открылось всплывающее окно, пройдите в бот по кнопке</p>
+              <div>
+                <a href="{{ tg_bot_url }}" id="my_btn_a" class="button modal-buttton w-button">Перейти в Телеграм</a>
+                <a href="{{ tg_bot_url }}" id="my_btn_b" class="button modal-buttton den-modal-btn w-button">Перейти в Телеграм</a>
+              </div>
             </div>
             <div class="error-message-3 w-form-fail">
               <div class="text-block-10">Ой! Что-то пошло не так при отправке формы.</div>
@@ -564,6 +569,7 @@
       </div>
     </div>
   </div>
+  <div class="tg_url" style="display: none;">{{ tg_bot_url }}</div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="{% static 'cite/js/webflow.js' %}" type="text/javascript"></script>
   <script type="text/javascript">
@@ -595,30 +601,71 @@
     }
 
     const csrftoken = getCookie('csrftoken');
-
     $(function() {
-          $("#wf-form-GetOrderForm").submit(function(e) {
+          var tg_url = $('.tg_url').text();
+        $("#wf-form-GetOrderForm").submit(function(e) {
             e.preventDefault(); 
-
             var form = $(this);
             var actionUrl = form.attr('action');
-            console.log(getFormData(form))
-
             $.ajax({
                 type: "POST",
                 url: actionUrl,
                 headers : { 'X-CSRFToken' : csrftoken },
-                data: getFormData(form), // serializes the form's elements.
+                data: getFormData(form), 
                 success: function(data){
                   $('#wf-form-GetOrderForm').hide();
                   $('.error-message-3').hide();
                   $('.success-message-3').show();
+                  window.open(tg_url, '_blank').focus(); 
+                  window.location.replace(tg_url);
                 },
                 error: function(data){
                   $('.error-message-3').show();
                 }
             });
+        });
 
+        $("").submit(function(e) {
+            e.preventDefault(); 
+            var form = $(this);
+            var actionUrl = form.attr('action');
+            $.ajax({
+                type: "POST",
+                url: actionUrl,
+                headers : { 'X-CSRFToken' : csrftoken },
+                data: getFormData(form), 
+                success: function(data){
+                  $('#wf-form-GetOrderForm').hide();
+                  $('.error-message-3').hide();
+                  $('.success-message-3').show();
+                  window.open(tg_url, '_blank').focus(); 
+                  window.location.replace(tg_url);
+                },
+                error: function(data){
+                  $('.error-message-3').show();
+                }
+            });
+        });
+        $("").submit(function(e) {
+            e.preventDefault(); 
+            var form = $(this);
+            var actionUrl = form.attr('action');
+            $.ajax({
+                type: "POST",
+                url: actionUrl,
+                headers : { 'X-CSRFToken' : csrftoken },
+                data: getFormData(form), 
+                success: function(data){
+                  $('#wf-form-GetOrderForm').hide();
+                  $('.error-message-3').hide();
+                  $('.success-message-3').show();
+                  window.open(tg_url, '_blank').focus(); 
+                  window.location.replace(tg_url);
+                },
+                error: function(data){
+                  $('.error-message-3').show();
+                }
+            });
         });
 
         $('input[id="on_site"]').click(function(){
@@ -637,10 +684,6 @@
             $(document).find( "#res_money_amount" ).text(money);
             $(document).find( "#res_card_tittle" ).text(tittle);
         });
-        //$("#download-btn").click(function(){
-            //window.open(href, '_blank').focus(); // "_self"
-            // window.location.replace(href);
-        //});
     });
 </script>
 </body>

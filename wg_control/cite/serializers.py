@@ -22,15 +22,18 @@ class OrderRequestSerializer(serializers.ModelSerializer):
             client=client,
             **user_data
         )
-
         order, is_created_3 =  Order.objects.get_or_create(
             **validated_data
         )   
-        order_request = models.OrderRequest.objects.create(
-            user=user,
-            order=order
-        )   
-        return order_request
+        if is_created_3:
+            order_request = models.OrderRequest.objects.create(
+                user=user,
+                order=order
+            )   
+            return order_request
+        else:
+            return order
+
 
 
 class ReviewSerializer(serializers.ModelSerializer):
